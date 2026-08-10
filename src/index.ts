@@ -4,6 +4,10 @@ import { logger } from "hono/logger";
 import "dotenv/config";
 
 import authRouter from "./routes/auth.routes";
+import fazendasRouter from "./routes/fazendas.routes";
+import talhoesRouter from "./routes/talhoes.routes";
+import lotesRouter from "./routes/lotes.routes";
+import vendasRouter from "./routes/vendas.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
 
@@ -42,6 +46,10 @@ app.get("/ping", (c) => {
 
 // ─── Rotas da API ─────────────────────────────────────────────────────────────
 app.route("/api/auth", authRouter);
+app.route("/api/fazendas", fazendasRouter);   // GET/POST/PUT/DELETE /api/fazendas
+app.route("/api", talhoesRouter);             // /api/fazendas/:id/talhoes | /api/talhoes/:id
+app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api/lotes/:id
+app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
 
 // ─── Documentação (Swagger UI) ────────────────────────────────────────────────
 app.route("/", swaggerRouter);
