@@ -1,0 +1,660 @@
+{
+  "id": "83515283-a85c-4ed5-829c-d18dcee9e77b",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.fazendas": {
+      "name": "fazendas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proprietario": {
+          "name": "proprietario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooperado_iniciais": {
+          "name": "cooperado_iniciais",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "localizacao": {
+          "name": "localizacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cor": {
+          "name": "cor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lotes": {
+      "name": "lotes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fazenda_id": {
+          "name": "fazenda_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "talhao_ids": {
+          "name": "talhao_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "safra": {
+          "name": "safra",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_lote_fazenda": {
+          "name": "numero_lote_fazenda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lote_colheita": {
+          "name": "lote_colheita",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_cafe": {
+          "name": "tipo_cafe",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "colheita_tipo": {
+          "name": "colheita_tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_colheita_inicio": {
+          "name": "data_colheita_inicio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_colheita_fim": {
+          "name": "data_colheita_fim",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'EM_COLHEITA'"
+        },
+        "data_entrada_terreiro": {
+          "name": "data_entrada_terreiro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_saida_terreiro": {
+          "name": "data_saida_terreiro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_entrada_secador": {
+          "name": "data_entrada_secador",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_saida_secador": {
+          "name": "data_saida_secador",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "umidade": {
+          "name": "umidade",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_tulha": {
+          "name": "numero_tulha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_beneficio": {
+          "name": "data_beneficio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_envio_cooperativa": {
+          "name": "data_envio_cooperativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_sacas": {
+          "name": "numero_sacas",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_lote_cooperativa": {
+          "name": "numero_lote_cooperativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nf_remessa_cooperativa": {
+          "name": "nf_remessa_cooperativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lotes_fazenda_id_fazendas_id_fk": {
+          "name": "lotes_fazenda_id_fazendas_id_fk",
+          "tableFrom": "lotes",
+          "tableTo": "fazendas",
+          "columnsFrom": [
+            "fazenda_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.talhoes": {
+      "name": "talhoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fazenda_id": {
+          "name": "fazenda_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area_hectares": {
+          "name": "area_hectares",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "variedade": {
+          "name": "variedade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "talhoes_fazenda_id_fazendas_id_fk": {
+          "name": "talhoes_fazenda_id_fazendas_id_fk",
+          "tableFrom": "talhoes",
+          "tableTo": "fazendas",
+          "columnsFrom": [
+            "fazenda_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'funcionario'"
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usuarios_email_unique": {
+          "name": "usuarios_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vendas": {
+      "name": "vendas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fazenda_id": {
+          "name": "fazenda_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lote_id": {
+          "name": "lote_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_lote_cooperativa": {
+          "name": "numero_lote_cooperativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "padrao": {
+          "name": "padrao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quebra": {
+          "name": "quebra",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "peneira": {
+          "name": "peneira",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amostra": {
+          "name": "amostra",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cliente": {
+          "name": "cliente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nf_venda": {
+          "name": "nf_venda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sacas_vendidas": {
+          "name": "sacas_vendidas",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "tipo_venda": {
+          "name": "tipo_venda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_venda": {
+          "name": "data_venda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vl_bruto": {
+          "name": "vl_bruto",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vl_liquido": {
+          "name": "vl_liquido",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "a_receber_previsto": {
+          "name": "a_receber_previsto",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_recebido": {
+          "name": "valor_recebido",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_recebimento": {
+          "name": "data_recebimento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "premio_rainforest": {
+          "name": "premio_rainforest",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anuncio_venda": {
+          "name": "anuncio_venda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nf_premio_rainforest": {
+          "name": "nf_premio_rainforest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "premio_liquido_funrural": {
+          "name": "premio_liquido_funrural",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooperado": {
+          "name": "cooperado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_envio_armazem": {
+          "name": "data_envio_armazem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sacas_do_lote": {
+          "name": "sacas_do_lote",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nr_remessa_cooperativa": {
+          "name": "nr_remessa_cooperativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lotes_agrupados": {
+          "name": "lotes_agrupados",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descontos": {
+          "name": "descontos",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conta_corrente": {
+          "name": "conta_corrente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_ds": {
+          "name": "is_ds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_recebimento_premio": {
+          "name": "data_recebimento_premio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vendas_fazenda_id_fazendas_id_fk": {
+          "name": "vendas_fazenda_id_fazendas_id_fk",
+          "tableFrom": "vendas",
+          "tableTo": "fazendas",
+          "columnsFrom": [
+            "fazenda_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "vendas_lote_id_lotes_id_fk": {
+          "name": "vendas_lote_id_lotes_id_fk",
+          "tableFrom": "vendas",
+          "tableTo": "lotes",
+          "columnsFrom": [
+            "lote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
