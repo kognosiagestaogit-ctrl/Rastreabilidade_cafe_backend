@@ -24,7 +24,7 @@ const LOTE_STATUS = [
 const loteSchema = z.object({
   fazenda_id: z.string().min(1),
   talhao_ids: z.array(z.string()).optional().default([]),
-  safra: z.number().int().min(2000).max(2100),
+  safra: z.number().int().min(2000).max(2100).optional(),
   numero_lote_fazenda: z.string().trim().min(1).max(50),
   lote_colheita: z.string().trim().max(50).optional().nullable(),
   tipo_cafe: z.string().trim().max(60).optional().nullable(),
