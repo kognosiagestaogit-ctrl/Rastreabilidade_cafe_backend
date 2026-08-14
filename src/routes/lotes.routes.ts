@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { db } from "../db/client";
-import { lotesTable } from "../db/schema";
+import { lotesTable, vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";
 import type { LoteStatus } from "../types";
 
@@ -47,12 +47,30 @@ const loteSchema = z.object({
 lotesRouter.get("/fazendas/:fazendaId/lotes", async (c) => {
   const fazendaId = c.req.param("fazendaId");
   try {
-    const rows = await db
+    const lotes = await db
       .select()
       .from(lotesTable)
       .where(eq(lotesTable.fazenda_id, fazendaId))
       .orderBy(desc(lotesTable.created_at));
-    return c.json(rows);
+
+    const vendasList = await db
+      .select({ lote_id: vendasTable.lote_id })
+      .from(vendasTable)
+      .where(eq(vendasTable.fazenda_id, fazendaId));
+
+    const vendasCountByLote = vendasList.reduce((acc, v) => {
+      if (v.lote_id) {
+        acc[v.lote_id] = (acc[v.lote_id] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const rowsWithVendasCount = lotes.map(lote => ({
+      ...lote,
+      quantidade_vendas: vendasCountByLote[lote.id] || 0
+    }));
+
+    return c.json(rowsWithVendasCount);
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar lotes", message: err.message }, 500);
   }
@@ -64,7 +82,13 @@ lotesRouter.get("/lotes/:id", async (c) => {
   try {
     const [row] = await db.select().from(lotesTable).where(eq(lotesTable.id, id)).limit(1);
     if (!row) return c.json({ error: "Lote não encontrado" }, 404);
-    return c.json(row);
+
+    const vendasDoLote = await db
+      .select({ id: vendasTable.id })
+      .from(vendasTable)
+      .where(eq(vendasTable.lote_id, id));
+
+    return c.json({ ...row, quantidade_vendas: vendasDoLote.length });
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar lote", message: err.message }, 500);
   }
