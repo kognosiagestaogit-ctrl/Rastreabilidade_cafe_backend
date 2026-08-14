@@ -8,6 +8,7 @@ import fazendasRouter from "./routes/fazendas.routes";
 import talhoesRouter from "./routes/talhoes.routes";
 import lotesRouter from "./routes/lotes.routes";
 import vendasRouter from "./routes/vendas.routes";
+import integracoesRouter from "./routes/integracoes.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
 
@@ -53,6 +54,7 @@ app.route("/api/fazendas", fazendasRouter);   // GET/POST/PUT/DELETE /api/fazend
 app.route("/api", talhoesRouter);             // /api/fazendas/:id/talhoes | /api/talhoes/:id
 app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api/lotes/:id
 app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
+app.route("/api/integracoes", integracoesRouter); // /api/integracoes/**
 
 // ─── Documentação (Swagger UI) ────────────────────────────────────────────────
 app.route("/", swaggerRouter);

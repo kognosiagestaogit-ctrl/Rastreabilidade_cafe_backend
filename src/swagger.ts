@@ -189,6 +189,53 @@ const schemas = {
       status: { type: "string", nullable: true },
     },
   },
+  Integracao: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      provider: { type: "string", enum: ["minasul"] },
+      username: { type: "string" },
+      has_credentials: { type: "boolean", example: true },
+      last_sync_at: { type: "string", format: "date-time", nullable: true },
+      status: { type: "string", enum: ["ATIVO", "ERRO", "DESATIVADO"] },
+      error_message: { type: "string", nullable: true },
+      created_at: { type: "string", format: "date-time" },
+      updated_at: { type: "string", format: "date-time" },
+    },
+  },
+  IntegracaoInput: {
+    type: "object",
+    required: ["provider", "username", "password"],
+    properties: {
+      provider: { type: "string", enum: ["minasul"], example: "minasul" },
+      username: { type: "string", example: "1427" },
+      password: { type: "string", example: "*****" },
+    },
+  },
+  SyncResponse: {
+    type: "object",
+    properties: {
+      success: { type: "boolean" },
+      provider: { type: "string" },
+      periodo: {
+        type: "object",
+        properties: {
+          dateIni: { type: "string", format: "date" },
+          dateEnd: { type: "string", format: "date" },
+        },
+      },
+      total_vendas: { type: "integer" },
+      vendas: { type: "array", items: { type: "object" } },
+    },
+  },
+  SyncDetalhesInput: {
+    type: "object",
+    required: ["salesId", "coopBatchId"],
+    properties: {
+      salesId: { type: "string", example: "AM-00311777" },
+      coopBatchId: { type: "string", example: "26270100028" },
+    },
+  },
 };
 
 const openApiSpec = {
@@ -209,6 +256,7 @@ const openApiSpec = {
     { name: "Talhões", description: "Talhões de uma fazenda" },
     { name: "Lotes", description: "Lotes de café" },
     { name: "Vendas", description: "Vendas de café" },
+    { name: "Integrações", description: "Integrações com sistemas externos (Minasul, etc.)" },
   ],
   components: {
     securitySchemes: {
@@ -498,6 +546,113 @@ const openApiSpec = {
         responses: {
           "200": { description: "Removida" },
           "404": { description: "Não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+    },
+
+    // ── Integrações ───────────────────────────────────────────────────────────
+    "/api/integracoes": {
+      get: {
+        tags: ["Integrações"],
+        summary: "Listar integrações configuradas",
+        operationId: "getIntegracoes",
+        security: [{ BearerAuth: [] }],
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Integracao" } } } } },
+        },
+      },
+      post: {
+        tags: ["Integrações"],
+        summary: "Salvar credenciais de integração (senha criptografada)",
+        operationId: "createIntegracao",
+        security: [{ BearerAuth: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/IntegracaoInput" } } } },
+        responses: {
+          "201": { description: "Criada", content: { "application/json": { schema: { $ref: "#/components/schemas/Integracao" } } } },
+          "400": { description: "Validação", content: { "application/json": { schema: { $ref: "#/components/schemas/ValidationError" } } } },
+        },
+      },
+    },
+    "/api/integracoes/{id}": {
+      get: {
+        tags: ["Integrações"],
+        summary: "Buscar integração por ID",
+        operationId: "getIntegracaoById",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/Integracao" } } } },
+          "404": { description: "Não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+      put: {
+        tags: ["Integrações"],
+        summary: "Atualizar credenciais de integração",
+        operationId: "updateIntegracao",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/IntegracaoInput" } } } },
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { $ref: "#/components/schemas/Integracao" } } } },
+          "404": { description: "Não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+      delete: {
+        tags: ["Integrações"],
+        summary: "Remover integração",
+        operationId: "deleteIntegracao",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Removida" },
+          "404": { description: "Não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+    },
+    "/api/integracoes/{id}/sync": {
+      post: {
+        tags: ["Integrações"],
+        summary: "Sincronizar vendas da Minasul",
+        description: "Faz login na API da Minasul, busca demonstrativos de vendas do período e retorna os dados.",
+        operationId: "syncIntegracao",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  dateIni: { type: "string", format: "date", example: "2026-01-01", description: "Data início (padrão: 12 meses atrás)" },
+                  dateEnd: { type: "string", format: "date", example: "2026-08-13", description: "Data fim (padrão: hoje)" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Sync realizado", content: { "application/json": { schema: { $ref: "#/components/schemas/SyncResponse" } } } },
+          "404": { description: "Integração não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          "500": { description: "Erro no sync", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+    },
+    "/api/integracoes/{id}/sync/detalhes": {
+      post: {
+        tags: ["Integrações"],
+        summary: "Buscar detalhes de uma venda na Minasul",
+        operationId: "syncIntegracaoDetalhes",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/SyncDetalhesInput" } } },
+        },
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { type: "object", properties: { success: { type: "boolean" }, detalhes: { type: "object" } } } } } },
+          "400": { description: "Parâmetros faltando", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          "404": { description: "Integração não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
         },
       },
     },

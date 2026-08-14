@@ -4,13 +4,9 @@ import { eq, desc } from "drizzle-orm";
 import { db } from "../db/client";
 import { vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";
-import type { Venda } from "../types";
 
 // Montado em /api pelo index.ts
 const vendasRouter = new Hono();
-
-// Fallback em memória
-let memVendas: Venda[] = [];
 
 const vendaSchema = z.object({
   fazenda_id: z.string().min(1),
@@ -57,11 +53,8 @@ vendasRouter.get("/fazendas/:fazendaId/vendas", async (c) => {
       .where(eq(vendasTable.fazenda_id, fazendaId))
       .orderBy(desc(vendasTable.created_at));
     return c.json(rows);
-  } catch {
-    console.warn("⚠️ DB indisponível — vendas em memória");
-    return c.json(
-      memVendas.filter((v) => v.fazenda_id === fazendaId).sort((a, b) => b.id.localeCompare(a.id))
-    );
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar vendas", message: err.message }, 500);
   }
 });
 
@@ -72,10 +65,8 @@ vendasRouter.get("/vendas/:id", async (c) => {
     const [row] = await db.select().from(vendasTable).where(eq(vendasTable.id, id)).limit(1);
     if (!row) return c.json({ error: "Venda não encontrada" }, 404);
     return c.json(row);
-  } catch {
-    const row = memVendas.find((v) => v.id === id);
-    if (!row) return c.json({ error: "Venda não encontrada" }, 404);
-    return c.json(row);
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar venda", message: err.message }, 500);
   }
 });
 
@@ -85,21 +76,16 @@ vendasRouter.post("/vendas", async (c) => {
     const body = await c.req.json();
     const data = vendaSchema.parse(body);
     const now = new Date().toISOString();
-    const nova: Venda = {
+    const nova = {
       id: randomUUID(),
       ...data,
       lote_id: data.lote_id ?? null,
       created_at: now,
       updated_at: now,
-    } as Venda;
-    try {
-      const [created] = await db.insert(vendasTable).values(nova).returning();
-      return c.json(created, 201);
-    } catch {
-      console.warn("⚠️ DB indisponível — salvando venda em memória");
-      memVendas.push(nova);
-      return c.json(nova, 201);
-    }
+    };
+    
+    const [created] = await db.insert(vendasTable).values(nova).returning();
+    return c.json(created, 201);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
     return c.json({ error: "Erro ao criar venda", message: err.message }, 500);
@@ -112,21 +98,15 @@ vendasRouter.put("/vendas/:id", async (c) => {
   try {
     const body = await c.req.json();
     const data = vendaSchema.partial().parse(body);
-    try {
-      const [updated] = await db
-        .update(vendasTable)
-        .set({ ...data, updated_at: new Date().toISOString() })
-        .where(eq(vendasTable.id, id))
-        .returning();
-      if (!updated) return c.json({ error: "Venda não encontrada" }, 404);
-      return c.json(updated);
-    } catch {
-      console.warn("⚠️ DB indisponível — atualizando venda em memória");
-      const idx = memVendas.findIndex((v) => v.id === id);
-      if (idx === -1) return c.json({ error: "Venda não encontrada" }, 404);
-      memVendas[idx] = { ...memVendas[idx], ...(data as any), updated_at: new Date().toISOString() };
-      return c.json(memVendas[idx]);
-    }
+    
+    const [updated] = await db
+      .update(vendasTable)
+      .set({ ...data, updated_at: new Date().toISOString() })
+      .where(eq(vendasTable.id, id))
+      .returning();
+      
+    if (!updated) return c.json({ error: "Venda não encontrada" }, 404);
+    return c.json(updated);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
     return c.json({ error: "Erro ao atualizar venda", message: err.message }, 500);
@@ -137,17 +117,9 @@ vendasRouter.put("/vendas/:id", async (c) => {
 vendasRouter.delete("/vendas/:id", async (c) => {
   const id = c.req.param("id");
   try {
-    try {
-      const [deleted] = await db.delete(vendasTable).where(eq(vendasTable.id, id)).returning();
-      if (!deleted) return c.json({ error: "Venda não encontrada" }, 404);
-      return c.json({ success: true });
-    } catch {
-      console.warn("⚠️ DB indisponível — removendo venda em memória");
-      const before = memVendas.length;
-      memVendas = memVendas.filter((v) => v.id !== id);
-      if (memVendas.length === before) return c.json({ error: "Venda não encontrada" }, 404);
-      return c.json({ success: true });
-    }
+    const [deleted] = await db.delete(vendasTable).where(eq(vendasTable.id, id)).returning();
+    if (!deleted) return c.json({ error: "Venda não encontrada" }, 404);
+    return c.json({ success: true });
   } catch (err: any) {
     return c.json({ error: "Erro ao remover venda", message: err.message }, 500);
   }

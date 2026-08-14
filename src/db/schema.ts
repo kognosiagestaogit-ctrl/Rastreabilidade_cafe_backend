@@ -118,3 +118,18 @@ export const vendasTable = pgTable("vendas", {
   created_at: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   updated_at: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });
+
+// ─── Integrações (Credenciais) ────────────────────────────────────────────────
+export const integracoesCredenciaisTable = pgTable("integracoes_credenciais", {
+  id: text("id").primaryKey(),
+  provider: text("provider").notNull(), // 'minasul' | futuramente outros
+  username: text("username").notNull(), // login/matrícula do cooperado
+  password_encrypted: text("password_encrypted").notNull(), // AES-256-GCM
+  access_token: text("access_token"), // JWT obtido no login (cache)
+  token_expires_at: timestamp("token_expires_at", { mode: "string" }),
+  last_sync_at: timestamp("last_sync_at", { mode: "string" }),
+  status: text("status").notNull().default("ATIVO"), // ATIVO | ERRO | DESATIVADO
+  error_message: text("error_message"),
+  created_at: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});

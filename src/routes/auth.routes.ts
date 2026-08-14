@@ -39,35 +39,8 @@ authRouter.post("/login", async (c) => {
         .where(eq(usuariosTable.email, validated.email))
         .limit(1);
       user = result[0];
-    } catch {
-      // Fallback para desenvolvimento sem banco de dados
-      console.warn("⚠️ Banco de dados indisponível, utilizando fallback para usuário demo...");
-      if (
-        validated.email === "admin@fazendapedranegra.com.br" &&
-        validated.password === "admin123"
-      ) {
-        const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-        const token = await sign(
-          { id: "demo-admin", email: validated.email, role: "admin", exp },
-          JWT_SECRET
-        );
-        return c.json({
-          token,
-          user: {
-            id: "demo-admin",
-            email: validated.email,
-            nome: "Administrador Demo",
-            role: "admin",
-            ativo: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        });
-      }
-      return c.json(
-        { error: "Credenciais inválidas", message: "E-mail ou senha incorretos." },
-        401
-      );
+    } catch (err: any) {
+      return c.json({ error: "Erro de banco de dados", message: err.message }, 500);
     }
 
     const handleLoginFailure = () => {
@@ -113,19 +86,6 @@ authRouter.get("/me", async (c) => {
     const payload = c.get("jwtPayload");
     if (!payload || !payload.id) {
       return c.json({ error: "Não autorizado", message: "Sessão inválida." }, 401);
-    }
-
-    if (payload.id === "demo-admin") {
-      console.warn("⚠️ Banco de dados indisponível, usando payload JWT para /me...");
-      return c.json({
-        id: payload.id,
-        email: payload.email,
-        nome: "Administrador Demo",
-        role: payload.role,
-        ativo: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
     }
 
     const [user] = await db
