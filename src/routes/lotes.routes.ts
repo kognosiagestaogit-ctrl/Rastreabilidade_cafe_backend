@@ -39,6 +39,7 @@ const loteSchema = z.object({
   data_envio_cooperativa: z.string().optional().nullable(),
   numero_sacas: z.number().optional().nullable(),
   numero_lote_cooperativa: z.string().trim().max(50).optional().nullable(),
+  amostra: z.string().trim().max(100).optional().nullable(),
   nf_remessa_cooperativa: z.string().trim().max(50).optional().nullable(),
   observacoes: z.string().trim().max(1000).optional().nullable(),
 });
@@ -122,6 +123,7 @@ lotesRouter.post("/lotes", async (c) => {
       data_envio_cooperativa: data.data_envio_cooperativa ?? null,
       numero_sacas: data.numero_sacas ?? null,
       numero_lote_cooperativa: data.numero_lote_cooperativa ?? null,
+      amostra: data.amostra ?? null,
       nf_remessa_cooperativa: data.nf_remessa_cooperativa ?? null,
       observacoes: data.observacoes ?? null,
       created_at: now,

@@ -72,6 +72,7 @@ export const lotesTable = pgTable("lotes", {
   data_envio_cooperativa: text("data_envio_cooperativa"),
   numero_sacas: real("numero_sacas"),
   numero_lote_cooperativa: text("numero_lote_cooperativa"),
+  amostra: text("amostra"),
   nf_remessa_cooperativa: text("nf_remessa_cooperativa"),
   observacoes: text("observacoes"),
   created_at: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
