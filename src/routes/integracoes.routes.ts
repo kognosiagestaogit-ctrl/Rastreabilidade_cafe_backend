@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../db/client";
 import { integracoesCredenciaisTable, lotesTable, vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";
@@ -346,8 +346,7 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
             }
           }
 
-          const novaVenda = {
-            id: randomUUID(),
+          const dadosVenda = {
             fazenda_id: dbLote.fazenda_id,
             lote_id: dbLote.id,
             numero_lote_cooperativa: coopBatchId,
@@ -364,13 +363,39 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
             cooperado: parsedResponse.CoopPropertyName || null,
             status: "RECEBIDO", 
             observacoes: `Importado via Minasul. Tipo original: ${parsedResponse.SalesType}`,
-            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
 
-          const [inserida] = await db.insert(vendasTable).values(novaVenda).returning();
-          
-          vendaCriada = inserida;
+          // Verifica se já existe uma venda com esse lote e amostra (salesId)
+          const [vendaExistente] = await db
+            .select()
+            .from(vendasTable)
+            .where(
+              and(
+                eq(vendasTable.numero_lote_cooperativa, coopBatchId),
+                eq(vendasTable.amostra, salesId)
+              )
+            )
+            .limit(1);
+
+          if (vendaExistente) {
+            // Atualiza
+            const [atualizada] = await db
+              .update(vendasTable)
+              .set(dadosVenda)
+              .where(eq(vendasTable.id, vendaExistente.id))
+              .returning();
+            vendaCriada = atualizada;
+          } else {
+            // Insere
+            const novaVenda = {
+              ...dadosVenda,
+              id: randomUUID(),
+              created_at: new Date().toISOString(),
+            };
+            const [inserida] = await db.insert(vendasTable).values(novaVenda).returning();
+            vendaCriada = inserida;
+          }
         }
 
         return c.json({
