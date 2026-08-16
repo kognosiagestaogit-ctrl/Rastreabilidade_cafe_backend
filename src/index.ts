@@ -97,4 +97,5 @@ process.on("SIGTERM", shutdown);
 export default {
   port,
   fetch: app.fetch,
+  idleTimeout: 255, // Aumenta o tempo limite para operações muito longas (ex: Cron)
 };

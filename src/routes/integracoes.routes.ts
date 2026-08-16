@@ -156,4 +156,149 @@ integracoesRouter.delete("/:id", async (c) => {
 
 
 
+// ── POST /api/integracoes/:id/sync/detalhes ──────────────────────────────────
+
+integracoesRouter.post("/:id/sync/detalhes", async (c) => {
+  const id = c.req.param("id");
+  try {
+    const { salesId, coopBatchId } = await c.req.json();
+    if (!salesId || !coopBatchId) {
+      return c.json({ error: "salesId e coopBatchId são obrigatórios" }, 400);
+    }
+
+    const [cred] = await db
+      .select()
+      .from(integracoesCredenciaisTable)
+      .where(eq(integracoesCredenciaisTable.id, id))
+      .limit(1);
+
+    if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
+
+    if (!cred.access_token) {
+      return c.json({ error: "Token não disponível. Faça login primeiro." }, 401);
+    }
+
+    // Busca detalhes
+    const detalhe = await minasulFetchVendaDetalhes(cred.access_token, salesId, coopBatchId);
+
+    // Encontra ou cria a Amostra baseada no salesId (que é o AM-...)
+    let [amostraObj] = await db
+      .select()
+      .from(amostrasTable)
+      .where(eq(amostrasTable.codigo_amostra, salesId))
+      .limit(1);
+
+    let amostrasCriadas = 0;
+    // Precisamos do fazenda_id. Como não vem da requisição, vamos pegar a primeira fazenda para simplificar, ou se já tiver amostra usamos o dela.
+    // O ideal seria passar fazendaId do frontend, mas como não passa, buscamos do primeiro lote existente.
+    let currentFazendaId = amostraObj?.fazenda_id;
+    if (!currentFazendaId) {
+      const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.numero_lote_cooperativa, coopBatchId)).limit(1);
+      if (lote) {
+        currentFazendaId = lote.fazenda_id;
+      }
+    }
+
+    if (!amostraObj && currentFazendaId) {
+      const novaAmostra = {
+        id: randomUUID(),
+        fazenda_id: currentFazendaId,
+        codigo_amostra: salesId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const [inserida] = await db.insert(amostrasTable).values(novaAmostra).returning();
+      amostraObj = inserida;
+      amostrasCriadas++;
+    }
+
+    let vendasCriadas = 0;
+    let vendasAtualizadas = 0;
+
+    if (amostraObj && currentFazendaId && detalhe) {
+      // Como o endpoint de detalhes retorna um array de itens da NF, nós consolidamos os itens
+      // O minasulFetchVendaDetalhes já retorna os itens? Sim, na doc da api "items" array.
+      // O resumo do lote seria atualizado como Venda
+      const itens = detalhe.items || [];
+      for (const item of itens) {
+         const nfNumber = item.fiscalDocumentNumber || detalhe.fiscalDocumentNumber || null;
+         
+         const dadosVenda = {
+           fazenda_id: currentFazendaId,
+           amostra_id: amostraObj.id,
+           numero_lote_cooperativa: coopBatchId,
+           amostra: salesId,
+           cliente: detalhe.purchName || "Minasul",
+           sacas_vendidas: Number(item.qtyBags) || Number(detalhe.totalQty) || 0,
+           tipo_venda: detalhe.salesType || "TERMO",
+           data_venda: detalhe.salesDate || null,
+           vl_bruto: Number(item.amount) || Number(detalhe.grossAmount) || 0,
+           vl_liquido: Number(item.netAmount) || Number(detalhe.netAmount) || 0,
+           valor_recebido: Number(item.netAmount) || Number(detalhe.netAmount) || 0,
+           nf_venda: nfNumber,
+           status: "RECEBIDO",
+           updated_at: new Date().toISOString(),
+         };
+
+         // Verifica se a venda já existe (mesma nf e lote)
+         const [vendaExistente] = await db
+           .select()
+           .from(vendasTable)
+           .where(
+             and(
+               eq(vendasTable.numero_lote_cooperativa, coopBatchId),
+               eq(vendasTable.amostra, salesId),
+               nfNumber ? eq(vendasTable.nf_venda, nfNumber) : eq(vendasTable.id, vendasTable.id) // Fallback se não tiver NF
+             )
+           )
+           .limit(1);
+
+         if (vendaExistente) {
+           await db.update(vendasTable).set(dadosVenda).where(eq(vendasTable.id, vendaExistente.id));
+           vendasAtualizadas++;
+         } else {
+           await db.insert(vendasTable).values({
+             ...dadosVenda,
+             id: randomUUID(),
+             created_at: new Date().toISOString()
+           });
+           vendasCriadas++;
+         }
+      }
+
+      // Recalcula totais da amostra
+      const vendasDaAmostra = await db.select().from(vendasTable).where(eq(vendasTable.amostra_id, amostraObj.id));
+      let sumSacas = 0;
+      let sumReceber = 0;
+      for (const v of vendasDaAmostra) {
+        sumSacas += Number(v.sacas_vendidas || 0);
+        sumReceber += Number(v.vl_liquido ?? v.a_receber_previsto ?? 0);
+      }
+      
+      await db.update(amostrasTable)
+        .set({
+           total_sacas: sumSacas,
+           a_receber_previsto: sumReceber,
+           updated_at: new Date().toISOString()
+        })
+        .where(eq(amostrasTable.id, amostraObj.id));
+    }
+
+    return c.json({
+      success: true,
+      message: "Sincronização de detalhes concluída",
+      resultados: {
+        amostras_novas: amostrasCriadas,
+        vendas_novas: vendasCriadas,
+        vendas_atualizadas: vendasAtualizadas
+      }
+    });
+
+  } catch (err: any) {
+    return c.json({ error: "Erro na sincronização de detalhes", message: err.message }, 500);
+  }
+});
+
+
+
 export default integracoesRouter;
