@@ -257,6 +257,7 @@ const openApiSpec = {
     { name: "Lotes", description: "Lotes de café" },
     { name: "Vendas", description: "Vendas de café" },
     { name: "Integrações", description: "Integrações com sistemas externos (Minasul, etc.)" },
+    { name: "Cron", description: "Rotinas automatizadas de sincronização" },
   ],
   components: {
     securitySchemes: {
@@ -609,50 +610,48 @@ const openApiSpec = {
         },
       },
     },
-    "/api/integracoes/{id}/sync": {
+    "/api/crons/sync-minasul-vendas": {
       post: {
-        tags: ["Integrações"],
-        summary: "Sincronizar vendas da Minasul",
-        description: "Faz login na API da Minasul, busca demonstrativos de vendas do período e retorna os dados.",
-        operationId: "syncIntegracao",
-        security: [{ BearerAuth: [] }],
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-        requestBody: {
-          required: false,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  dateIni: { type: "string", format: "date", example: "2026-01-01", description: "Data início (padrão: 12 meses atrás)" },
-                  dateEnd: { type: "string", format: "date", example: "2026-08-13", description: "Data fim (padrão: hoje)" },
+        tags: ["Cron"],
+        summary: "Executa rotina automática do Cron para sincronismo da Minasul",
+        description: "Faz login usando a credencial 1 da Minasul, busca vendas do dia e cadastra amostras e vendas relacionadas.",
+        operationId: "cronSyncMinasul",
+        parameters: [
+          {
+            name: "Authorization",
+            in: "header",
+            description: "Token Bearer contendo o CRON_SECRET",
+            required: true,
+            schema: {
+              type: "string",
+              example: "Bearer desenvolvimento_local_secret",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Sync do cron executado com sucesso",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    message: { type: "string" },
+                    resultados: {
+                      type: "object",
+                      properties: {
+                        amostras_novas: { type: "integer" },
+                        vendas_novas: { type: "integer" },
+                      },
+                    },
+                  },
                 },
               },
             },
           },
-        },
-        responses: {
-          "200": { description: "Sync realizado", content: { "application/json": { schema: { $ref: "#/components/schemas/SyncResponse" } } } },
-          "404": { description: "Integração não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
-          "500": { description: "Erro no sync", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
-        },
-      },
-    },
-    "/api/integracoes/{id}/sync/detalhes": {
-      post: {
-        tags: ["Integrações"],
-        summary: "Buscar detalhes de uma venda na Minasul",
-        operationId: "syncIntegracaoDetalhes",
-        security: [{ BearerAuth: [] }],
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-        requestBody: {
-          required: true,
-          content: { "application/json": { schema: { $ref: "#/components/schemas/SyncDetalhesInput" } } },
-        },
-        responses: {
-          "200": { description: "OK", content: { "application/json": { schema: { type: "object", properties: { success: { type: "boolean" }, detalhes: { type: "object" } } } } } },
-          "400": { description: "Parâmetros faltando", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
-          "404": { description: "Integração não encontrada", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          "401": { description: "Acesso não autorizado", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          "500": { description: "Erro na rotina de sincronização do cron", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
         },
       },
     },

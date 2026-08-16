@@ -65,8 +65,8 @@ cronRouter.post("/sync-minasul-vendas", async (c) => {
     // Data de hoje (UTC/Local simplificado para ISO yyyy-mm-dd)
     const today = new Date().toISOString().slice(0, 10);
     console.log(`[CRON] Buscando vendas da Minasul para o dia: ${today}`);
-
-    const vendasResumo = await minasulFetchVendas(token, today, today);
+    console.log('today: ', today);
+    const vendasResumo = await minasulFetchVendas(token, '2026-06-24', '2026-06-24');
     if (!vendasResumo || !Array.isArray(vendasResumo)) {
       return c.json({ message: "Nenhuma venda retornada hoje" });
     }
