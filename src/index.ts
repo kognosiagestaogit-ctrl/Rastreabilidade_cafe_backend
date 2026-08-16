@@ -10,6 +10,7 @@ import lotesRouter from "./routes/lotes.routes";
 import vendasRouter from "./routes/vendas.routes";
 import amostrasRouter from "./routes/amostras.routes";
 import integracoesRouter from "./routes/integracoes.routes";
+import cronRouter from "./routes/cron.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
 
@@ -37,8 +38,13 @@ app.use(
   })
 );
 
-// Autenticação JWT em todas as rotas /api/*
-app.use("/api/*", authMiddleware);
+// Autenticação JWT em todas as rotas /api/* (exceto crons)
+app.use("/api/*", async (c, next) => {
+  if (c.req.path.startsWith("/api/crons")) {
+    return next();
+  }
+  return authMiddleware(c, next);
+});
 
 // ─── Ping (Health Check) ──────────────────────────────────────────────────────
 app.get("/ping", (c) => {
@@ -57,6 +63,7 @@ app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api
 app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
 app.route("/api", amostrasRouter);            // /api/fazendas/:id/amostras | /api/amostras/:id
 app.route("/api/integracoes", integracoesRouter); // /api/integracoes/**
+app.route("/api/crons", cronRouter);          // /api/crons/**
 
 // ─── Documentação (Swagger UI) ────────────────────────────────────────────────
 app.route("/", swaggerRouter);
