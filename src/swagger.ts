@@ -396,6 +396,36 @@ const openApiSpec = {
       },
     },
 
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    "/api/fazendas/{fazendaId}/dashboard": {
+      get: {
+        tags: ["Dashboard"],
+        summary: "Métricas do Dashboard",
+        description: "Retorna o total de sacas produzidas, vendidas, faturadas e a receber da fazenda.",
+        operationId: "getDashboard",
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: "fazendaId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Métricas calculadas com sucesso",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/DashboardMetricas" },
+              },
+            },
+          },
+          "401": { description: "Não autorizado", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+        },
+      },
+    },
+
     // ── Talhões ───────────────────────────────────────────────────────────────
     "/api/fazendas/{fazendaId}/talhoes": {
       get: {
