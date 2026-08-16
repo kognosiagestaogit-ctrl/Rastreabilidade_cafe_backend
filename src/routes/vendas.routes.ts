@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db/client";
 import { vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";
@@ -55,6 +55,34 @@ vendasRouter.get("/fazendas/:fazendaId/vendas", async (c) => {
     return c.json(rows);
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar vendas", message: err.message }, 500);
+  }
+});
+// GET /api/fazendas/:fazendaId/vendas/disponiveis
+// Lista vendas que ainda não estão vinculadas a nenhuma amostra
+vendasRouter.get("/fazendas/:fazendaId/vendas/disponiveis", async (c) => {
+  const fazendaId = c.req.param("fazendaId");
+  try {
+    const rows = await db
+      .select({
+        id: vendasTable.id,
+        numero_lote_cooperativa: vendasTable.numero_lote_cooperativa,
+        amostra: vendasTable.amostra,
+        data_venda: vendasTable.data_venda,
+        sacas_vendidas: vendasTable.sacas_vendidas,
+        tipo_venda: vendasTable.tipo_venda,
+        vl_liquido: vendasTable.vl_liquido,
+      })
+      .from(vendasTable)
+      .where(
+        and(
+          eq(vendasTable.fazenda_id, fazendaId),
+          isNull(vendasTable.amostra_id)
+        )
+      )
+      .orderBy(desc(vendasTable.created_at));
+    return c.json(rows);
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar vendas disponíveis", message: err.message }, 500);
   }
 });
 
