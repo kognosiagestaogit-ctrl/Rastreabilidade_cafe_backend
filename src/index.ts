@@ -11,6 +11,7 @@ import vendasRouter from "./routes/vendas.routes";
 import amostrasRouter from "./routes/amostras.routes";
 import integracoesRouter from "./routes/integracoes.routes";
 import cronRouter from "./routes/cron.routes";
+import dashboardRouter from "./routes/dashboard.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
 
@@ -63,6 +64,7 @@ app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api
 app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
 app.route("/api", amostrasRouter);            // /api/fazendas/:id/amostras | /api/amostras/:id
 app.route("/api/integracoes", integracoesRouter); // /api/integracoes/**
+app.route("/api", dashboardRouter);           // /api/fazendas/:id/dashboard
 app.route("/api/crons", cronRouter);          // /api/crons/**
 
 // ─── Documentação (Swagger UI) ────────────────────────────────────────────────
