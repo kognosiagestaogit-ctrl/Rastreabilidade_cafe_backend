@@ -11,7 +11,6 @@ import {
   minasulFetchVendaDetalhes,
 } from "../services/minasul.service";
 
-// Montado em /api/integracoes pelo index.ts
 const integracoesRouter = new Hono();
 
 type IntegracaoCredencial = {
@@ -34,7 +33,6 @@ const integracaoSchema = z.object({
   password: z.string().min(1, "Senha é obrigatória"),
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Remove senha do retorno */
 function sanitize(row: IntegracaoCredencial) {
@@ -42,7 +40,6 @@ function sanitize(row: IntegracaoCredencial) {
   return { ...safe, has_credentials: true };
 }
 
-// ── GET /api/integracoes ─────────────────────────────────────────────────────
 
 integracoesRouter.get("/", async (c) => {
   try {
@@ -315,9 +312,19 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
     // Tratar a resposta da Minasul
     if (detalhesResponse && detalhesResponse.status === "Success" && detalhesResponse.SalesStatement?.response) {
       try {
-        const parsedResponse = JSON.parse(detalhesResponse.SalesStatement.response);
+        let rawResponseString = detalhesResponse.SalesStatement.response;
         
-        // 1. Procurar o Lote no nosso banco para pegar fazenda_id e lote_id
+        if (typeof rawResponseString === "string" && rawResponseString.startsWith('"') && rawResponseString.endsWith('"')) {
+          rawResponseString = rawResponseString.slice(1, -1).replace(/\\"/g, '"');
+        }
+
+        let parsedResponse = JSON.parse(rawResponseString);
+
+        
+        if (typeof parsedResponse === "string") {
+          parsedResponse = JSON.parse(parsedResponse);
+        }
+
         const [dbLote] = await db
           .select()
           .from(lotesTable)
@@ -327,23 +334,19 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
         let vendaCriada = null;
         
         if (dbLote) {
-          // Helper para remover vírgulas e converter para float
           const parseNumber = (val: string | undefined | null) => {
             if (!val) return null;
             const parsed = parseFloat(val.replace(/,/g, ""));
             return isNaN(parsed) ? null : parsed;
           };
 
-          // Formatar data MM/DD/YYYY para YYYY-MM-DD
           let dataVendaFormatada = null;
-          if (parsedResponse.SalesDate) {
-            const parts = parsedResponse.SalesDate.split("/");
-            if (parts.length === 3) {
-              const m = parts[0].padStart(2, '0');
-              const d = parts[1].padStart(2, '0');
-              const y = parts[2];
-              dataVendaFormatada = `${y}-${m}-${d}`;
-            }
+         
+          let tipoVendaFormatado = parsedResponse.SalesType || "TERMO";
+          if (tipoVendaFormatado.toUpperCase().includes("TERMO")) {
+            tipoVendaFormatado = "TERMO";
+          } else if (tipoVendaFormatado.toUpperCase().includes("FISICA") || tipoVendaFormatado.toUpperCase().includes("FÍSICA")) {
+            tipoVendaFormatado = "FISICA";
           }
 
           const dadosVenda = {
@@ -353,20 +356,20 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
             amostra: salesId,
             cliente: parsedResponse.Name || null,
             sacas_vendidas: parseNumber(parsedResponse.QtyBags) || 0,
-            tipo_venda: "TERMO", // Valor seguro, ou inferir de SalesType se for estrito
+            tipo_venda: tipoVendaFormatado, 
             data_venda: dataVendaFormatada,
-            vl_bruto: parseNumber(parsedResponse.NetTotalAmount),
-            vl_liquido: parseNumber(parsedResponse.NetAmountToPay),
-            valor_recebido: parseNumber(parsedResponse.NetAmountToPay),
-            descontos: parseNumber(parsedResponse.Discount),
-            premio_liquido_funrural: parseNumber(parsedResponse.FunruralAmount),
+            vl_bruto: parseNumber(parsedResponse.NetTotalAmount) || parseNumber(parsedResponse.SalesAmount) || parseNumber(parsedResponse.TotalPrice),
+            vl_liquido: parseNumber(parsedResponse.NetAmountToPay) || parseNumber(parsedResponse.NetTotalAmount),
+            valor_recebido: parseNumber(parsedResponse.NetAmountToPay) || parseNumber(parsedResponse.NetTotalAmount),
+            descontos: parseNumber(parsedResponse.Discount) || 0,
+            premio_liquido_funrural: parseNumber(parsedResponse.FunruralAmount) || 0,
+            nr_remessa_cooperativa: parsedResponse.PurchAgreementId || parsedResponse.InventBatchId || null,
             cooperado: parsedResponse.CoopPropertyName || null,
             status: "RECEBIDO", 
-            observacoes: `Importado via Minasul. Tipo original: ${parsedResponse.SalesType}`,
+            observacoes: `Importado via Minasul. Tipo original: ${parsedResponse.SalesType || 'N/A'}`,
             updated_at: new Date().toISOString(),
           };
 
-          // Verifica se já existe uma venda com esse lote e amostra (salesId)
           const [vendaExistente] = await db
             .select()
             .from(vendasTable)
@@ -379,7 +382,6 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
             .limit(1);
 
           if (vendaExistente) {
-            // Atualiza
             const [atualizada] = await db
               .update(vendasTable)
               .set(dadosVenda)
@@ -387,7 +389,6 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
               .returning();
             vendaCriada = atualizada;
           } else {
-            // Insere
             const novaVenda = {
               ...dadosVenda,
               id: randomUUID(),

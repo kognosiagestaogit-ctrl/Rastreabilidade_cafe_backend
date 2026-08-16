@@ -79,6 +79,28 @@ export const lotesTable = pgTable("lotes", {
   updated_at: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });
 
+// ─── Amostras ─────────────────────────────────────────────────────────────────
+export const amostrasTable = pgTable("amostras", {
+  id: text("id").primaryKey(),
+  fazenda_id: text("fazenda_id")
+    .notNull()
+    .references(() => fazendasTable.id, { onDelete: "cascade" }),
+  codigo_amostra: text("codigo_amostra").notNull().unique(),
+  total_sacas: real("total_sacas").notNull().default(0), // soma total dos lotes (sacas ou equivalente)
+  descontos: real("descontos").notNull().default(0),
+  observacoes: text("observacoes"),
+  a_receber_previsto: real("a_receber_previsto"),
+  valor_recebido: real("valor_recebido"),
+  data_recebimento: text("data_recebimento"),
+  conta_corrente: text("conta_corrente"),
+  is_ds: real("is_ds").notNull().default(0), // Valor financeiro
+  premio_rainforest: real("premio_rainforest").notNull().default(0),
+  anuncio_venda: text("anuncio_venda"),
+  v_funrural: real("v_funrural").notNull().default(0),
+  created_at: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});
+
 // ─── Vendas ───────────────────────────────────────────────────────────────────
 export const vendasTable = pgTable("vendas", {
   id: text("id").primaryKey(),
@@ -90,7 +112,8 @@ export const vendasTable = pgTable("vendas", {
   padrao: text("padrao"),
   quebra: real("quebra"),
   peneira: text("peneira"),
-  amostra: text("amostra"),
+  amostra_id: text("amostra_id").references(() => amostrasTable.id, { onDelete: "set null" }), // Aponta para a nova entidade
+  amostra: text("amostra"), // Mantido para armazenar o código bruto importado, se necessário
   cliente: text("cliente"),
   nf_venda: text("nf_venda"),
   sacas_vendidas: real("sacas_vendidas").notNull().default(0),

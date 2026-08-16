@@ -8,6 +8,7 @@ import fazendasRouter from "./routes/fazendas.routes";
 import talhoesRouter from "./routes/talhoes.routes";
 import lotesRouter from "./routes/lotes.routes";
 import vendasRouter from "./routes/vendas.routes";
+import amostrasRouter from "./routes/amostras.routes";
 import integracoesRouter from "./routes/integracoes.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
@@ -54,6 +55,7 @@ app.route("/api/fazendas", fazendasRouter);   // GET/POST/PUT/DELETE /api/fazend
 app.route("/api", talhoesRouter);             // /api/fazendas/:id/talhoes | /api/talhoes/:id
 app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api/lotes/:id
 app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
+app.route("/api", amostrasRouter);            // /api/fazendas/:id/amostras | /api/amostras/:id
 app.route("/api/integracoes", integracoesRouter); // /api/integracoes/**
 
 // ─── Documentação (Swagger UI) ────────────────────────────────────────────────
@@ -75,6 +77,15 @@ const port = Number(process.env.PORT || 3001);
 console.log(`🚀 API Fazenda Pedra Negra em execução na porta ${port}...`);
 console.log(`📚 Swagger UI: http://localhost:${port}/doc`);
 console.log(`🏓 Ping:       http://localhost:${port}/ping`);
+
+// ─── Graceful Shutdown (Evita prender a porta no debugger) ────────────────────
+const shutdown = () => {
+  console.log("🛑 Encerrando o servidor e liberando a porta...");
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 export default {
   port,
