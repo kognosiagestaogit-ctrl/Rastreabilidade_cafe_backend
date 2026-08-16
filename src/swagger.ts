@@ -236,6 +236,15 @@ const schemas = {
       coopBatchId: { type: "string", example: "26270100028" },
     },
   },
+  DashboardMetricas: {
+    type: "object",
+    properties: {
+      total_sacas_produzidas: { type: "number", example: 1200 },
+      total_sacas_vendidas: { type: "number", example: 850 },
+      total_faturado: { type: "number", example: 980500.50 },
+      total_a_receber: { type: "number", example: 350000.00 },
+    },
+  },
 };
 
 const openApiSpec = {
@@ -253,6 +262,7 @@ const openApiSpec = {
     { name: "Health", description: "Health check" },
     { name: "Auth", description: "Autenticação" },
     { name: "Fazendas", description: "Gestão de fazendas" },
+    { name: "Dashboard", description: "Métricas agregadas" },
     { name: "Talhões", description: "Talhões de uma fazenda" },
     { name: "Lotes", description: "Lotes de café" },
     { name: "Vendas", description: "Vendas de café" },
