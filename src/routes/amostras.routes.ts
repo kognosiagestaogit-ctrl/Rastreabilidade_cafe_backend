@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import { amostrasTable, vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";
@@ -145,6 +145,30 @@ amostrasRouter.delete("/amostras/:id", async (c) => {
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ error: "Erro ao deletar amostra", message: err.message }, 500);
+  }
+});
+
+// POST /api/amostras/:id/vincular-vendas
+amostrasRouter.post("/amostras/:id/vincular-vendas", async (c) => {
+  const amostraId = c.req.param("id");
+  try {
+    const { vendasIds } = await c.req.json();
+    if (!Array.isArray(vendasIds) || vendasIds.length === 0) {
+      return c.json({ error: "vendasIds deve ser um array com pelo menos 1 ID" }, 400);
+    }
+    
+    const [amostra] = await db.select().from(amostrasTable).where(eq(amostrasTable.id, amostraId)).limit(1);
+    if (!amostra) return c.json({ error: "Amostra não encontrada" }, 404);
+
+    const updated = await db
+      .update(vendasTable)
+      .set({ amostra_id: amostraId, updated_at: new Date().toISOString() })
+      .where(inArray(vendasTable.id, vendasIds))
+      .returning();
+
+    return c.json({ success: true, updatedCount: updated.length, vendas: updated });
+  } catch (err: any) {
+    return c.json({ error: "Erro ao vincular vendas", message: err.message }, 500);
   }
 });
 
