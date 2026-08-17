@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fazenda_pedra_negra_db_prod
+    restart: always # Em produção, queremos que o banco reinicie caso caia
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-fazenda_pedra_negra}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fazenda_pedra_negra_api_prod
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy # Só sobe a API quando o banco estiver pronto
+
+volumes:
+  pgdata_prod:

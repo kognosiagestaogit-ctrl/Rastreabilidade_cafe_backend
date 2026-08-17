@@ -11,7 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "seed": "bun run src/db/seed.ts"
+    "seed": "bun run src/db/seed.ts",
+    "docker:build": "docker build -t fazenda-pedra-negra-backend .",
+    "docker:up": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:down": "docker compose -f docker-compose.prod.yml down"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.6.1",
