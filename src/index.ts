@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import "dotenv/config";
+import { env } from "./config/env";
 
 import authRouter from "./routes/auth.routes";
 import fazendasRouter from "./routes/fazendas.routes";
@@ -22,15 +22,24 @@ app.use("*", logger());
 app.use(
   "/api/*",
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://127.0.0.1:3000",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:8080",
-      "http://127.0.0.1:8080",
-    ],
+    origin: (origin) => {
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+      ];
+      if (env.FRONTEND_URL) {
+        allowedOrigins.push(env.FRONTEND_URL);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        return origin;
+      }
+      return null;
+    },
     allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
@@ -82,7 +91,7 @@ app.onError((err, c) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-const port = Number(process.env.PORT || 3001);
+const port = Number(env.PORT);
 console.log(`🚀 API Fazenda Pedra Negra em execução na porta ${port}...`);
 console.log(`📚 Swagger UI: http://localhost:${port}/doc`);
 console.log(`🏓 Ping:       http://localhost:${port}/ping`);

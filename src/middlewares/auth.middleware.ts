@@ -1,8 +1,9 @@
 import { Context, Next } from "hono";
 import { verify } from "hono/jwt";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "fazenda_pedra_negra_secret_key_change_in_production";
+import { env } from "../config/env";
+
+const JWT_SECRET = env.JWT_SECRET;
 
 // Rotas públicas que não exigem autenticação
 const PUBLIC_PATHS = ["/ping", "/doc", "/openapi.json", "/api/auth/login"];

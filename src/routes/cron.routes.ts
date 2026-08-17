@@ -11,9 +11,10 @@ import {
 import { decrypt } from "../lib/encryption";
 import { randomUUID } from "crypto";
 import {
-  minasulLogin,
   minasulFetchVendas,
+  minasulLogin
 } from "../services/minasul.service";
+import { env } from "../config/env";
 
 const cronRouter = new Hono();
 
@@ -33,7 +34,7 @@ const parseNumber = (val: any) => {
 // Middleware simples de autenticação (usa cabeçalho CRON_SECRET)
 cronRouter.use("*", async (c, next) => {
   const authHeader = c.req.header("Authorization");
-  const secret = process.env.CRON_SECRET || "desenvolvimento_local_secret";
+  const secret = env.CRON_SECRET;
 
   if (!authHeader || authHeader !== `Bearer ${secret}`) {
     console.error("Tentativa de acesso não autorizada na rota de CRON");

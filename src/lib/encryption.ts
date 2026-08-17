@@ -14,14 +14,10 @@ const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16; // 128 bits
 const AUTH_TAG_LENGTH = 16; // 128 bits
 
+import { env } from "../config/env";
+
 function getEncryptionKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) {
-    throw new Error(
-      "ENCRYPTION_KEY não configurada no .env. " +
-      "Gere uma chave com: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
-    );
-  }
+  const key = env.ENCRYPTION_KEY;
   // A chave deve ter exatamente 32 bytes (64 caracteres hex)
   return Buffer.from(key, "hex");
 }
