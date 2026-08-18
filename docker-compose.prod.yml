@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     ports:
-      - "3001:3001"
+      - "3003:3001"
     depends_on:
       db:
         condition: service_healthy # Só sobe a API quando o banco estiver pronto

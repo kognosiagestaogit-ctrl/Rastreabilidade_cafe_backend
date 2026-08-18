@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "bun run src/db/seed.ts",
+    "seed:admin": "bun run src/db/seed-admin.ts",
     "docker:build": "docker build -t fazenda-pedra-negra-backend .",
     "docker:up": "docker compose -f docker-compose.prod.yml up -d",
     "docker:down": "docker compose -f docker-compose.prod.yml down"
