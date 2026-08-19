@@ -14,6 +14,7 @@ import cronRouter from "./routes/cron.routes";
 import dashboardRouter from "./routes/dashboard.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
+import { initCronJobs } from "./jobs/cron-scheduler";
 
 const app = new Hono();
 
@@ -72,7 +73,7 @@ app.route("/api", talhoesRouter);             // /api/fazendas/:id/talhoes | /ap
 app.route("/api", lotesRouter);               // /api/fazendas/:id/lotes  | /api/lotes/:id
 app.route("/api", vendasRouter);              // /api/fazendas/:id/vendas | /api/vendas/:id
 app.route("/api", amostrasRouter);            // /api/fazendas/:id/amostras | /api/amostras/:id
-app.route("/api/integracoes", integracoesRouter); // /api/integracoes/**
+app.route("/api", integracoesRouter);         // /api/fazendas/:id/integracoes | /api/integracoes/:id
 app.route("/api", dashboardRouter);           // /api/fazendas/:id/dashboard
 app.route("/api/crons", cronRouter);          // /api/crons/**
 
@@ -95,6 +96,8 @@ const port = Number(env.PORT);
 console.log(`🚀 API Fazenda Pedra Negra em execução na porta ${port}...`);
 console.log(`📚 Swagger UI: http://localhost:${port}/doc`);
 console.log(`🏓 Ping:       http://localhost:${port}/ping`);
+
+initCronJobs();
 
 // ─── Graceful Shutdown (Evita prender a porta no debugger) ────────────────────
 const shutdown = () => {

@@ -146,6 +146,9 @@ export const vendasTable = pgTable("vendas", {
 // ─── Integrações (Credenciais) ────────────────────────────────────────────────
 export const integracoesCredenciaisTable = pgTable("integracoes_credenciais", {
   id: text("id").primaryKey(),
+  fazenda_id: text("fazenda_id")
+    .notNull()
+    .references(() => fazendasTable.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(), // 'minasul' | futuramente outros
   username: text("username").notNull(), // login/matrícula do cooperado
   password_encrypted: text("password_encrypted").notNull(), // AES-256-GCM

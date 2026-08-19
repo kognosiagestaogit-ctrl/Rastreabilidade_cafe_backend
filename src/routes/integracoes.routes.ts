@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client";
-import { integracoesCredenciaisTable, lotesTable, vendasTable } from "../db/schema";
+import { integracoesCredenciaisTable, lotesTable, vendasTable, amostrasTable } from "../db/schema";
 import { randomUUID } from "crypto";
 import { encrypt, decrypt } from "../lib/encryption";
 import {
@@ -15,6 +15,7 @@ const integracoesRouter = new Hono();
 
 type IntegracaoCredencial = {
   id: string;
+  fazenda_id: string;
   provider: string;
   username: string;
   password_encrypted: string;
@@ -33,17 +34,20 @@ const integracaoSchema = z.object({
   password: z.string().min(1, "Senha é obrigatória"),
 });
 
-
 /** Remove senha do retorno */
 function sanitize(row: IntegracaoCredencial) {
   const { password_encrypted, access_token, ...safe } = row;
   return { ...safe, has_credentials: true };
 }
 
-
-integracoesRouter.get("/", async (c) => {
+// ── GET /api/fazendas/:fazendaId/integracoes ─────────────────────────────────────────────────
+integracoesRouter.get("/fazendas/:fazendaId/integracoes", async (c) => {
+  const fazendaId = c.req.param("fazendaId");
   try {
-    const rows = await db.select().from(integracoesCredenciaisTable);
+    const rows = await db
+      .select()
+      .from(integracoesCredenciaisTable)
+      .where(eq(integracoesCredenciaisTable.fazenda_id, fazendaId));
     return c.json(rows.map(sanitize));
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar integrações", message: err.message }, 500);
@@ -51,8 +55,7 @@ integracoesRouter.get("/", async (c) => {
 });
 
 // ── GET /api/integracoes/:id ─────────────────────────────────────────────────
-
-integracoesRouter.get("/:id", async (c) => {
+integracoesRouter.get("/integracoes/:id", async (c) => {
   const id = c.req.param("id");
   try {
     const [row] = await db
@@ -67,9 +70,9 @@ integracoesRouter.get("/:id", async (c) => {
   }
 });
 
-// ── POST /api/integracoes ────────────────────────────────────────────────────
-
-integracoesRouter.post("/", async (c) => {
+// ── POST /api/fazendas/:fazendaId/integracoes ────────────────────────────────────────────────────
+integracoesRouter.post("/fazendas/:fazendaId/integracoes", async (c) => {
+  const fazendaId = c.req.param("fazendaId");
   try {
     const body = await c.req.json();
     const data = integracaoSchema.parse(body);
@@ -79,6 +82,7 @@ integracoesRouter.post("/", async (c) => {
 
     const novo = {
       id: randomUUID(),
+      fazenda_id: fazendaId,
       provider: data.provider,
       username: data.username,
       password_encrypted: passwordEncrypted,
@@ -104,8 +108,7 @@ integracoesRouter.post("/", async (c) => {
 });
 
 // ── PUT /api/integracoes/:id ─────────────────────────────────────────────────
-
-integracoesRouter.put("/:id", async (c) => {
+integracoesRouter.put("/integracoes/:id", async (c) => {
   const id = c.req.param("id");
   try {
     const body = await c.req.json();
@@ -139,8 +142,7 @@ integracoesRouter.put("/:id", async (c) => {
 });
 
 // ── DELETE /api/integracoes/:id ──────────────────────────────────────────────
-
-integracoesRouter.delete("/:id", async (c) => {
+integracoesRouter.delete("/integracoes/:id", async (c) => {
   const id = c.req.param("id");
   try {
     const [deleted] = await db
@@ -154,11 +156,8 @@ integracoesRouter.delete("/:id", async (c) => {
   }
 });
 
-
-
 // ── POST /api/integracoes/:id/sync/detalhes ──────────────────────────────────
-
-integracoesRouter.post("/:id/sync/detalhes", async (c) => {
+integracoesRouter.post("/integracoes/:id/sync/detalhes", async (c) => {
   const id = c.req.param("id");
   try {
     const { salesId, coopBatchId } = await c.req.json();
@@ -178,10 +177,8 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
       return c.json({ error: "Token não disponível. Faça login primeiro." }, 401);
     }
 
-    // Busca detalhes
     const detalhe = await minasulFetchVendaDetalhes(cred.access_token, salesId, coopBatchId);
 
-    // Encontra ou cria a Amostra baseada no salesId (que é o AM-...)
     let [amostraObj] = await db
       .select()
       .from(amostrasTable)
@@ -189,15 +186,7 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
       .limit(1);
 
     let amostrasCriadas = 0;
-    // Precisamos do fazenda_id. Como não vem da requisição, vamos pegar a primeira fazenda para simplificar, ou se já tiver amostra usamos o dela.
-    // O ideal seria passar fazendaId do frontend, mas como não passa, buscamos do primeiro lote existente.
-    let currentFazendaId = amostraObj?.fazenda_id;
-    if (!currentFazendaId) {
-      const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.numero_lote_cooperativa, coopBatchId)).limit(1);
-      if (lote) {
-        currentFazendaId = lote.fazenda_id;
-      }
-    }
+    let currentFazendaId = cred.fazenda_id; // Usa fazendaId da credencial
 
     if (!amostraObj && currentFazendaId) {
       const novaAmostra = {
@@ -216,9 +205,6 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
     let vendasAtualizadas = 0;
 
     if (amostraObj && currentFazendaId && detalhe) {
-      // Como o endpoint de detalhes retorna um array de itens da NF, nós consolidamos os itens
-      // O minasulFetchVendaDetalhes já retorna os itens? Sim, na doc da api "items" array.
-      // O resumo do lote seria atualizado como Venda
       const itens = detalhe.items || [];
       for (const item of itens) {
          const nfNumber = item.fiscalDocumentNumber || detalhe.fiscalDocumentNumber || null;
@@ -240,7 +226,6 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
            updated_at: new Date().toISOString(),
          };
 
-         // Verifica se a venda já existe (mesma nf e lote)
          const [vendaExistente] = await db
            .select()
            .from(vendasTable)
@@ -248,7 +233,7 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
              and(
                eq(vendasTable.numero_lote_cooperativa, coopBatchId),
                eq(vendasTable.amostra, salesId),
-               nfNumber ? eq(vendasTable.nf_venda, nfNumber) : eq(vendasTable.id, vendasTable.id) // Fallback se não tiver NF
+               nfNumber ? eq(vendasTable.nf_venda, nfNumber) : eq(vendasTable.id, vendasTable.id)
              )
            )
            .limit(1);
@@ -266,7 +251,6 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
          }
       }
 
-      // Recalcula totais da amostra
       const vendasDaAmostra = await db.select().from(vendasTable).where(eq(vendasTable.amostra_id, amostraObj.id));
       let sumSacas = 0;
       let sumReceber = 0;
@@ -293,12 +277,9 @@ integracoesRouter.post("/:id/sync/detalhes", async (c) => {
         vendas_atualizadas: vendasAtualizadas
       }
     });
-
   } catch (err: any) {
     return c.json({ error: "Erro na sincronização de detalhes", message: err.message }, 500);
   }
 });
-
-
 
 export default integracoesRouter;
