@@ -54,10 +54,16 @@ export async function minasulLogin(
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(
-      `Falha no login Minasul (HTTP ${res.status}): ${body}`
-    );
+    let errorMsg = `HTTP ${res.status}`;
+    try {
+      const errorData = await res.json();
+      if (errorData.message) errorMsg = errorData.message;
+      else if (errorData.error) errorMsg = errorData.error;
+    } catch {
+      // Ignore if not json
+      errorMsg = await res.text() || errorMsg;
+    }
+    throw new Error(`Falha no login Minasul: ${errorMsg}`);
   }
 
   const data = await res.json() as MinasulLoginResponse;
@@ -97,10 +103,15 @@ export async function minasulFetchVendas(
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(
-      `Falha ao buscar vendas Minasul (HTTP ${res.status}): ${body}`
-    );
+    let errorMsg = `HTTP ${res.status}`;
+    try {
+      const errorData = await res.json();
+      if (errorData.message) errorMsg = errorData.message;
+      else if (errorData.error) errorMsg = errorData.error;
+    } catch {
+      errorMsg = await res.text() || errorMsg;
+    }
+    throw new Error(`Falha ao buscar vendas Minasul: ${errorMsg}`);
   }
 
   const data = await res.json();
@@ -131,10 +142,15 @@ export async function minasulFetchVendaDetalhes(
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(
-      `Falha ao buscar detalhes Minasul (HTTP ${res.status}): ${body}`
-    );
+    let errorMsg = `HTTP ${res.status}`;
+    try {
+      const errorData = await res.json();
+      if (errorData.message) errorMsg = errorData.message;
+      else if (errorData.error) errorMsg = errorData.error;
+    } catch {
+      errorMsg = await res.text() || errorMsg;
+    }
+    throw new Error(`Falha ao buscar detalhes Minasul: ${errorMsg}`);
   }
 
   const data = await res.json();
