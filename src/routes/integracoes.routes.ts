@@ -282,4 +282,35 @@ integracoesRouter.post("/integracoes/:id/sync/detalhes", async (c) => {
   }
 });
 
+// ── GET /api/integracoes/:id/buscar-registros ──────────────────────────────────
+integracoesRouter.get("/integracoes/:id/buscar-registros", async (c) => {
+  const id = c.req.param("id");
+  const mes = c.req.query("mes");
+  const ano = c.req.query("ano");
+
+  try {
+    if (!mes || !ano) {
+      return c.json({ error: "Mês e ano são obrigatórios" }, 400);
+    }
+
+    const [cred] = await db
+      .select()
+      .from(integracoesCredenciaisTable)
+      .where(eq(integracoesCredenciaisTable.id, id))
+      .limit(1);
+
+    if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
+
+    // Por hora, dados mocados simulando a busca na api externa
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    return c.json({
+      vendas: Math.floor(Math.random() * 50) + 10,
+      amostras: Math.floor(Math.random() * 20) + 5,
+    });
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar registros", message: err.message }, 500);
+  }
+});
+
 export default integracoesRouter;
