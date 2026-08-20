@@ -10,6 +10,7 @@ import {
   minasulFetchVendas,
   minasulFetchVendaDetalhes,
 } from "../services/minasul.service";
+import { syncMinasulVendasPeriodo } from "../services/minasul-sync.service";
 
 const integracoesRouter = new Hono();
 
@@ -301,12 +302,29 @@ integracoesRouter.get("/integracoes/:id/buscar-registros", async (c) => {
 
     if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
 
-    // Por hora, dados mocados simulando a busca na api externa
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const password = decrypt(cred.password_encrypted);
+    const loginResult = await minasulLogin(cred.username, password);
+    const token = loginResult.token;
+
+    await db
+      .update(integracoesCredenciaisTable)
+      .set({ access_token: token, updated_at: new Date().toISOString() })
+      .where(eq(integracoesCredenciaisTable.id, cred.id));
+
+    const m = mes.padStart(2, "0");
+    const dateIni = `${ano}-${m}-01`;
+    const dateEnd = new Date(Number(ano), Number(m), 0).toISOString().slice(0, 10);
+
+    const { amostras_novas, vendas_novas } = await syncMinasulVendasPeriodo(
+      cred.fazenda_id,
+      token,
+      dateIni,
+      dateEnd
+    );
 
     return c.json({
-      vendas: Math.floor(Math.random() * 50) + 10,
-      amostras: Math.floor(Math.random() * 20) + 5,
+      vendas: vendas_novas,
+      amostras: amostras_novas,
     });
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar registros", message: err.message }, 500);
