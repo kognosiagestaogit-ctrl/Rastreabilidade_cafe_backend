@@ -210,8 +210,19 @@ integracoesRouter.post("/integracoes/:id/sync/detalhes", async (c) => {
       for (const item of itens) {
          const nfNumber = item.fiscalDocumentNumber || detalhe.fiscalDocumentNumber || null;
          
+         const [dbLote] = await db
+           .select()
+           .from(lotesTable)
+           .where(eq(lotesTable.numero_lote_cooperativa, coopBatchId))
+           .limit(1);
+
+         if (dbLote && dbLote.amostra !== salesId) {
+           await db.update(lotesTable).set({ amostra: salesId, updated_at: new Date().toISOString() }).where(eq(lotesTable.id, dbLote.id));
+         }
+
          const dadosVenda = {
            fazenda_id: currentFazendaId,
+           lote_id: dbLote?.id || null,
            amostra_id: amostraObj.id,
            numero_lote_cooperativa: coopBatchId,
            amostra: salesId,
@@ -223,6 +234,9 @@ integracoesRouter.post("/integracoes/:id/sync/detalhes", async (c) => {
            vl_liquido: Number(item.netAmount) || Number(detalhe.netAmount) || 0,
            valor_recebido: Number(item.netAmount) || Number(detalhe.netAmount) || 0,
            nf_venda: nfNumber,
+           data_envio_armazem: dbLote?.data_envio_cooperativa || null,
+           sacas_do_lote: dbLote?.numero_sacas || null,
+           nr_remessa_cooperativa: dbLote?.nf_remessa_cooperativa || null,
            status: "RECEBIDO",
            updated_at: new Date().toISOString(),
          };
