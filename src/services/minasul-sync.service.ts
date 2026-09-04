@@ -15,16 +15,16 @@ const parseNumber = (val: any) => {
   return null;
 };
 
-export async function syncMinasulVendasPeriodo(
+/**
+ * Cria ou atualiza os registros de vendas e amostras no banco de dados
+ * com base no payload já baixado da Minasul.
+ */
+export async function syncMinasulVendasFromPayload(
   credencialFazendaId: string,
-  token: string,
-  dateIni: string,
-  dateEnd: string
+  vendasResumo: any[]
 ) {
   let amostrasCriadas = 0;
   let vendasCriadas = 0;
-
-  const vendasResumo = await minasulFetchVendas(token, dateIni, dateEnd);
 
   if (!vendasResumo || !Array.isArray(vendasResumo)) {
     return { amostras_novas: amostrasCriadas, vendas_novas: vendasCriadas };
@@ -151,4 +151,17 @@ export async function syncMinasulVendasPeriodo(
   }
 
   return { amostras_novas: amostrasCriadas, vendas_novas: vendasCriadas };
+}
+
+/**
+ * Função mantida para compatibilidade, faz o fetch e o sync
+ */
+export async function syncMinasulVendasPeriodo(
+  credencialFazendaId: string,
+  token: string,
+  dateIni: string,
+  dateEnd: string
+) {
+  const vendasResumo = await minasulFetchVendas(token, dateIni, dateEnd);
+  return syncMinasulVendasFromPayload(credencialFazendaId, vendasResumo);
 }

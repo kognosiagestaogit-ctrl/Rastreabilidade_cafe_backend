@@ -10,7 +10,7 @@ import {
   minasulFetchVendas,
   minasulFetchVendaDetalhes,
 } from "../services/minasul.service";
-import { syncMinasulVendasPeriodo } from "../services/minasul-sync.service";
+import { syncMinasulVendasPeriodo, syncMinasulVendasFromPayload } from "../services/minasul-sync.service";
 
 const integracoesRouter = new Hono();
 
@@ -329,19 +329,50 @@ integracoesRouter.get("/integracoes/:id/buscar-registros", async (c) => {
     const dateIni = `${ano}-${m}-01`;
     const dateEnd = new Date(Number(ano), Number(m), 0).toISOString().slice(0, 10);
 
-    const { amostras_novas, vendas_novas } = await syncMinasulVendasPeriodo(
-      cred.fazenda_id,
-      token,
-      dateIni,
-      dateEnd
-    );
+    // Retorna os dados para o frontend, SEM salvar ainda
+    const vendasResumo = await minasulFetchVendas(token, dateIni, dateEnd);
 
     return c.json({
-      vendas: vendas_novas,
-      amostras: amostras_novas,
+      data: vendasResumo
     });
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar registros", message: err.message }, 500);
+  }
+});
+
+// ── POST /api/integracoes/:id/salvar-registros ─────────────────────────────────
+integracoesRouter.post("/integracoes/:id/salvar-registros", async (c) => {
+  const id = c.req.param("id");
+
+  try {
+    const { vendasResumo } = await c.req.json();
+    if (!vendasResumo || !Array.isArray(vendasResumo)) {
+      return c.json({ error: "Payload inválido. Esperado array vendasResumo." }, 400);
+    }
+
+    const [cred] = await db
+      .select()
+      .from(integracoesCredenciaisTable)
+      .where(eq(integracoesCredenciaisTable.id, id))
+      .limit(1);
+
+    if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
+
+    const { amostras_novas, vendas_novas } = await syncMinasulVendasFromPayload(
+      cred.fazenda_id,
+      vendasResumo
+    );
+
+    return c.json({
+      success: true,
+      message: "Registros importados com sucesso",
+      resultados: {
+        amostras: amostras_novas,
+        vendas: vendas_novas,
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: "Erro ao salvar registros", message: err.message }, 500);
   }
 });
 
