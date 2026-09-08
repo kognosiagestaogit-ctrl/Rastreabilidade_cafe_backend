@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull, getTableColumns } from "drizzle-orm";
 import { db } from "../db/client";
-import { lotesTable, vendasTable } from "../db/schema";
+import { lotesTable, vendasTable, amostrasTable } from "../db/schema";
 import { randomUUID } from "crypto";
 import type { LoteStatus } from "../types";
 
@@ -42,6 +42,28 @@ const loteSchema = z.object({
   amostra: z.string().trim().max(100).optional().nullable(),
   nf_remessa_cooperativa: z.string().trim().max(50).optional().nullable(),
   observacoes: z.string().trim().max(1000).optional().nullable(),
+});
+
+// GET /api/fazendas/:fazendaId/lotes/sem-venda
+lotesRouter.get("/fazendas/:fazendaId/lotes/sem-venda", async (c) => {
+  const fazendaId = c.req.param("fazendaId");
+  try {
+    const lotes = await db
+      .select(getTableColumns(lotesTable))
+      .from(lotesTable)
+      .leftJoin(vendasTable, eq(lotesTable.id, vendasTable.lote_id))
+      .where(
+        and(
+          eq(lotesTable.fazenda_id, fazendaId),
+          isNull(vendasTable.id)
+        )
+      )
+      .orderBy(desc(lotesTable.created_at));
+
+    return c.json(lotes);
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar lotes sem venda", details: err.message }, 500);
+  }
 });
 
 // GET /api/fazendas/:fazendaId/lotes
@@ -131,7 +153,35 @@ lotesRouter.post("/lotes", async (c) => {
     };
     
     const [created] = await db.insert(lotesTable).values(novo).returning();
-    return c.json(created, 201);
+
+    // Inteligência de Auto-Vínculo: Lote -> Venda
+    let venda_vinculada_id = null;
+    let mensagem_vinculo = "Nenhum 'Nº lote cooperativa' informado para vínculo.";
+
+    if (created.numero_lote_cooperativa) {
+      mensagem_vinculo = "Nenhuma venda pendente encontrada com este Nº lote cooperativa.";
+      const [vendaEncontrada] = await db
+        .select()
+        .from(vendasTable)
+        .where(eq(vendasTable.numero_lote_cooperativa, created.numero_lote_cooperativa))
+        .limit(1);
+
+      if (vendaEncontrada) {
+        await db
+          .update(vendasTable)
+          .set({ lote_id: created.id })
+          .where(eq(vendasTable.id, vendaEncontrada.id));
+          
+        venda_vinculada_id = vendaEncontrada.id;
+        mensagem_vinculo = `Venda vinculada com sucesso! (ID: ${vendaEncontrada.id})`;
+      }
+    }
+
+    return c.json({
+      ...created,
+      venda_vinculada_id,
+      mensagem_vinculo
+    }, 201);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
     return c.json({ error: "Erro ao criar lote", message: err.message }, 500);
@@ -152,7 +202,35 @@ lotesRouter.put("/lotes/:id", async (c) => {
       .returning();
       
     if (!updated) return c.json({ error: "Lote não encontrado" }, 404);
-    return c.json(updated);
+
+    // Inteligência de Auto-Vínculo: Lote -> Venda
+    let venda_vinculada_id = null;
+    let mensagem_vinculo = "Nenhum 'Nº lote cooperativa' informado para vínculo.";
+
+    if (updated.numero_lote_cooperativa) {
+      mensagem_vinculo = "Nenhuma venda pendente encontrada com este Nº lote cooperativa.";
+      const [vendaEncontrada] = await db
+        .select()
+        .from(vendasTable)
+        .where(eq(vendasTable.numero_lote_cooperativa, updated.numero_lote_cooperativa))
+        .limit(1);
+
+      if (vendaEncontrada) {
+        await db
+          .update(vendasTable)
+          .set({ lote_id: updated.id })
+          .where(eq(vendasTable.id, vendaEncontrada.id));
+          
+        venda_vinculada_id = vendaEncontrada.id;
+        mensagem_vinculo = `Venda vinculada com sucesso! (ID: ${vendaEncontrada.id})`;
+      }
+    }
+
+    return c.json({
+      ...updated,
+      venda_vinculada_id,
+      mensagem_vinculo
+    });
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
     return c.json({ error: "Erro ao atualizar lote", message: err.message }, 500);

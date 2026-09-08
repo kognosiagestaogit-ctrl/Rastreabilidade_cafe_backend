@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, isNull } from "drizzle-orm";
 import { db } from "../db/client";
 import { amostrasTable, vendasTable } from "../db/schema";
 import { randomUUID } from "crypto";

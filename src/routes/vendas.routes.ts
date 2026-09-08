@@ -43,6 +43,26 @@ const vendaSchema = z.object({
   status: z.string().trim().max(50).optional().nullable(),
 });
 
+// GET /api/fazendas/:fazendaId/vendas/sem-lote
+vendasRouter.get("/fazendas/:fazendaId/vendas/sem-lote", async (c) => {
+  const fazendaId = c.req.param("fazendaId");
+  try {
+    const rows = await db
+      .select()
+      .from(vendasTable)
+      .where(
+        and(
+          eq(vendasTable.fazenda_id, fazendaId),
+          isNull(vendasTable.lote_id)
+        )
+      )
+      .orderBy(desc(vendasTable.created_at));
+    return c.json(rows);
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar vendas sem lote", message: err.message }, 500);
+  }
+});
+
 // GET /api/fazendas/:fazendaId/vendas
 vendasRouter.get("/fazendas/:fazendaId/vendas", async (c) => {
   const fazendaId = c.req.param("fazendaId");

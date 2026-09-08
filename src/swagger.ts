@@ -466,6 +466,18 @@ const openApiSpec = {
     },
 
     // ── Lotes ─────────────────────────────────────────────────────────────────
+    "/api/fazendas/{fazendaId}/lotes/sem-venda": {
+      get: {
+        tags: ["Lotes"],
+        summary: "Listar lotes sem vínculo com venda",
+        operationId: "getLotesSemVenda",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "fazendaId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Lote" } } } } },
+        },
+      },
+    },
     "/api/fazendas/{fazendaId}/lotes": {
       get: {
         tags: ["Lotes"],
@@ -482,6 +494,7 @@ const openApiSpec = {
       post: {
         tags: ["Lotes"],
         summary: "Criar lote",
+        description: "Cria um novo lote. Se `numero_lote_cooperativa` for fornecido, a API tentará encontrar uma Venda correspondente e fará o vínculo automático (lote_id) na venda.",
         operationId: "createLote",
         security: [{ BearerAuth: [] }],
         requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/LoteInput" } } } },
@@ -506,6 +519,7 @@ const openApiSpec = {
       put: {
         tags: ["Lotes"],
         summary: "Atualizar lote",
+        description: "Atualiza um lote existente. Se `numero_lote_cooperativa` for fornecido/alterado, a API fará o vínculo automático (lote_id) em uma Venda correspondente.",
         operationId: "updateLote",
         security: [{ BearerAuth: [] }],
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
@@ -529,6 +543,18 @@ const openApiSpec = {
     },
 
     // ── Vendas ────────────────────────────────────────────────────────────────
+    "/api/fazendas/{fazendaId}/vendas/sem-lote": {
+      get: {
+        tags: ["Vendas"],
+        summary: "Listar vendas sem vínculo com lote",
+        operationId: "getVendasSemLote",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "fazendaId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "OK", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Venda" } } } } },
+        },
+      },
+    },
     "/api/fazendas/{fazendaId}/vendas": {
       get: {
         tags: ["Vendas"],

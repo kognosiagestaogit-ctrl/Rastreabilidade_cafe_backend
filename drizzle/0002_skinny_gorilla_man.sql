@@ -1,0 +1,2 @@
+ALTER TABLE "amostras" ADD COLUMN "lote_id" text;--> statement-breakpoint
+ALTER TABLE "amostras" ADD CONSTRAINT "amostras_lote_id_lotes_id_fk" FOREIGN KEY ("lote_id") REFERENCES "public"."lotes"("id") ON DELETE set null ON UPDATE no action;

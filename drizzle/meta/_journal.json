@@ -15,6 +15,20 @@
       "when": 1787182474533,
       "tag": "0001_clever_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788822554114,
+      "tag": "0002_skinny_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788896628872,
+      "tag": "0003_smiling_trish_tilby",
+      "breakpoints": true
     }
   ]
 }
