@@ -14,7 +14,6 @@ import cronRouter from "./routes/cron.routes";
 import dashboardRouter from "./routes/dashboard.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import swaggerRouter from "./swagger";
-import { initCronJobs } from "./jobs/cron-scheduler";
 
 const app = new Hono();
 
@@ -96,8 +95,6 @@ const port = Number(env.PORT);
 console.log(`🚀 API Fazenda Pedra Negra em execução na porta ${port}...`);
 console.log(`📚 Swagger UI: http://localhost:${port}/doc`);
 console.log(`🏓 Ping:       http://localhost:${port}/ping`);
-
-initCronJobs();
 
 // ─── Graceful Shutdown (Evita prender a porta no debugger) ────────────────────
 const shutdown = () => {
