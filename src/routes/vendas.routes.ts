@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db/client";
-import { vendasTable } from "../db/schema";
+import { vendasTable, lotesTable } from "../db/schema";
 import { randomUUID } from "crypto";
 
 // Montado em /api pelo index.ts
@@ -154,6 +154,16 @@ vendasRouter.put("/vendas/:id", async (c) => {
       .returning();
       
     if (!updated) return c.json({ error: "Venda não encontrada" }, 404);
+
+    if (updated.lote_id) {
+      const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, updated.lote_id)).limit(1);
+      if (lote && lote.numero_sacas != null) {
+         const sobra = lote.numero_sacas - updated.sacas_vendidas;
+         await db.update(vendasTable).set({ sobra_sacas: sobra }).where(eq(vendasTable.id, id));
+         updated.sobra_sacas = sobra;
+      }
+    }
+
     return c.json(updated);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);

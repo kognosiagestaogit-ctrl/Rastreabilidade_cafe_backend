@@ -169,6 +169,7 @@ const schemas = {
       valor_recebido: { type: "number", nullable: true },
       data_recebimento: { type: "string", format: "date", nullable: true },
       premio_rainforest: { type: "number", nullable: true },
+      sobra_sacas: { type: "number", nullable: true },
       status: { type: "string", nullable: true },
       created_at: { type: "string", format: "date-time" },
       updated_at: { type: "string", format: "date-time" },

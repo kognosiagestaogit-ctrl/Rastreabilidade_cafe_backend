@@ -167,9 +167,14 @@ lotesRouter.post("/lotes", async (c) => {
         .limit(1);
 
       if (vendaEncontrada) {
+        let sobra = null;
+        if (created.numero_sacas != null) {
+          sobra = created.numero_sacas - vendaEncontrada.sacas_vendidas;
+        }
+
         await db
           .update(vendasTable)
-          .set({ lote_id: created.id })
+          .set({ lote_id: created.id, sobra_sacas: sobra })
           .where(eq(vendasTable.id, vendaEncontrada.id));
           
         venda_vinculada_id = vendaEncontrada.id;
@@ -216,9 +221,14 @@ lotesRouter.put("/lotes/:id", async (c) => {
         .limit(1);
 
       if (vendaEncontrada) {
+        let sobra = null;
+        if (updated.numero_sacas != null) {
+          sobra = updated.numero_sacas - vendaEncontrada.sacas_vendidas;
+        }
+
         await db
           .update(vendasTable)
-          .set({ lote_id: updated.id })
+          .set({ lote_id: updated.id, sobra_sacas: sobra })
           .where(eq(vendasTable.id, vendaEncontrada.id));
           
         venda_vinculada_id = vendaEncontrada.id;
