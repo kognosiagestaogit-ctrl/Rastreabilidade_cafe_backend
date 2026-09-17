@@ -62,7 +62,8 @@ export const lotesTable = pgTable("lotes", {
   data_colheita_fim: text("data_colheita_fim"),
   status: text("status").notNull().default("EM_COLHEITA"),
   // EM_COLHEITA | NO_TERREIRO | NO_SECADOR | NA_TULHA | BENEFICIADO | ENVIADO_COOPERATIVA
-  data_entrada_terreiro: text("data_entrada_terreiro"),
+  data_entrada_terreiro_inicio: text("data_entrada_terreiro_inicio"),
+  data_entrada_terreiro_fim: text("data_entrada_terreiro_fim"),
   data_saida_terreiro: text("data_saida_terreiro"),
   data_entrada_secador: text("data_entrada_secador"),
   data_saida_secador: text("data_saida_secador"),
