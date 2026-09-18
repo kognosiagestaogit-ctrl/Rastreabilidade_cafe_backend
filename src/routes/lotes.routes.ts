@@ -230,7 +230,7 @@ lotesRouter.put("/lotes/:id", async (c) => {
 
         await db
           .update(vendasTable)
-          .set({ lote_id: updated.id, sobra_sacas: sobra })
+          .set({ lote_id: updated.id, sobra_sacas: sobra, sacas_do_lote: updated.numero_sacas })
           .where(eq(vendasTable.id, vendaEncontrada.id));
           
         venda_vinculada_id = vendaEncontrada.id;

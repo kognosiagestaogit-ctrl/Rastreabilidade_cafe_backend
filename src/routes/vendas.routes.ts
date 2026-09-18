@@ -150,19 +150,21 @@ vendasRouter.post("/vendas", async (c) => {
 
         await db
           .update(vendasTable)
-          .set({ lote_id: loteEncontrado.id, sobra_sacas: sobra })
+          .set({ lote_id: loteEncontrado.id, sobra_sacas: sobra, sacas_do_lote: loteEncontrado.numero_sacas })
           .where(eq(vendasTable.id, created.id));
 
         created.lote_id = loteEncontrado.id;
         created.sobra_sacas = sobra;
+        created.sacas_do_lote = loteEncontrado.numero_sacas;
       }
     } else if (created.lote_id) {
       // Se já veio com lote_id, calcular a sobra
       const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, created.lote_id)).limit(1);
       if (lote && lote.numero_sacas != null) {
         const sobra = lote.numero_sacas - created.sacas_vendidas;
-        await db.update(vendasTable).set({ sobra_sacas: sobra }).where(eq(vendasTable.id, created.id));
+        await db.update(vendasTable).set({ sobra_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, created.id));
         created.sobra_sacas = sobra;
+        created.sacas_do_lote = lote.numero_sacas;
       }
     }
 
@@ -192,8 +194,9 @@ vendasRouter.put("/vendas/:id", async (c) => {
       const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, updated.lote_id)).limit(1);
       if (lote && lote.numero_sacas != null) {
          const sobra = lote.numero_sacas - updated.sacas_vendidas;
-         await db.update(vendasTable).set({ sobra_sacas: sobra }).where(eq(vendasTable.id, id));
+         await db.update(vendasTable).set({ sobra_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, id));
          updated.sobra_sacas = sobra;
+         updated.sacas_do_lote = lote.numero_sacas;
       }
     }
 
