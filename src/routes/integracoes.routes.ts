@@ -345,9 +345,10 @@ integracoesRouter.post("/integracoes/:id/salvar-registros", async (c) => {
   const id = c.req.param("id");
 
   try {
-    const { vendasResumo } = await c.req.json();
+    const payload = await c.req.json();
+    const vendasResumo = payload.vendasResumo || payload.data;
     if (!vendasResumo || !Array.isArray(vendasResumo)) {
-      return c.json({ error: "Payload inválido. Esperado array vendasResumo." }, 400);
+      return c.json({ error: "Payload inválido. Esperado array vendasResumo ou data." }, 400);
     }
 
     const [cred] = await db

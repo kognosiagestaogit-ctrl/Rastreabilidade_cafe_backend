@@ -99,6 +99,24 @@ export async function syncMinasulVendasFromPayload(
       }
     }
 
+    let padraoFormatado = null;
+    let quebraFormatada = null;
+    let peneiraFormatada = null;
+
+    if (resumo.DETAIL) {
+      const detailParts = resumo.DETAIL.split("-");
+      padraoFormatado = detailParts[0] || null;
+      
+      if (detailParts[1] && detailParts[1].trim() !== "") {
+        const parsedQuebra = parseNumber(detailParts[1]);
+        if (parsedQuebra !== null) {
+          quebraFormatada = parsedQuebra;
+        }
+      }
+
+      peneiraFormatada = detailParts[3] || null;
+    }
+
     const dadosVenda = {
       fazenda_id: currentFazendaId,
       lote_id: dbLote?.id || null,
@@ -113,10 +131,14 @@ export async function syncMinasulVendasFromPayload(
       vl_liquido: parseNumber(resumo.NETLINEAMOUNT) || parseNumber(resumo.LINEAMOUNT),
       valor_recebido: parseNumber(resumo.NETLINEAMOUNT) || parseNumber(resumo.LINEAMOUNT),
       data_recebimento: dataRecebimentoFormatada,
+      padrao: padraoFormatado,
+      quebra: quebraFormatada,
+      peneira: peneiraFormatada,
       premio_rainforest: parseNumber(resumo.AWARDVALUE) || 0,
       nr_remessa_cooperativa: resumo.FISCALDOCUMENTNUMBER || dbLote?.nf_remessa_cooperativa || null,
       data_envio_armazem: dbLote?.data_envio_cooperativa || null,
       sacas_do_lote: dbLote?.numero_sacas || null,
+      sobra_sacas: dbLote?.numero_sacas != null ? dbLote.numero_sacas - (parseNumber(resumo.QTYBAGS) || 0) : null,
       cooperado: resumo.PROPERTYDESCR || null,
       status: "RECEBIDO", 
       observacoes: `[Criado pela API] Importado via Minasul. Tipo original: ${resumo.SALESTYPE || 'N/A'}. Lote Coop: ${coopBatchId}`,
