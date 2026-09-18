@@ -25,6 +25,7 @@ export async function syncMinasulVendasFromPayload(
 ) {
   let amostrasCriadas = 0;
   let vendasCriadas = 0;
+  const amostrasAfetadas = new Set<string>();
 
   if (!vendasResumo || !Array.isArray(vendasResumo)) {
     return { amostras_novas: amostrasCriadas, vendas_novas: vendasCriadas };
@@ -169,6 +170,31 @@ export async function syncMinasulVendasFromPayload(
       };
       await db.insert(vendasTable).values(novaVenda);
       vendasCriadas++;
+    }
+
+    if (amostraObj?.id) {
+      amostrasAfetadas.add(amostraObj.id);
+    }
+  }
+
+  // Recalcular totais de sacas e valores para as amostras afetadas
+  if (amostrasAfetadas.size > 0) {
+    for (const amostraId of amostrasAfetadas) {
+      const todasVendas = await db.select().from(vendasTable).where(eq(vendasTable.amostra_id, amostraId));
+      let sumSacas = 0;
+      let sumReceber = 0;
+      for (const v of todasVendas) {
+        sumSacas += Number(v.sacas_vendidas || 0);
+        sumReceber += Number(v.vl_liquido ?? v.a_receber_previsto ?? 0);
+      }
+      await db
+        .update(amostrasTable)
+        .set({ 
+          total_sacas: sumSacas, 
+          a_receber_previsto: sumReceber,
+          updated_at: new Date().toISOString()
+        })
+        .where(eq(amostrasTable.id, amostraId));
     }
   }
 
