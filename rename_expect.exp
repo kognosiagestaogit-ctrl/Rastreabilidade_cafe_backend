@@ -1,0 +1,9 @@
+set timeout 10
+spawn bun run db:push
+expect {
+    "create column" {
+        send "\033\[B\r"
+        exp_continue
+    }
+    eof
+}
