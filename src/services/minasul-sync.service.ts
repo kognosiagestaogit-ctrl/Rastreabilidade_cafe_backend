@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { lotesTable, amostrasTable, vendasTable } from "../db/schema";
 import { minasulFetchVendas } from "./minasul.service";
@@ -39,7 +39,7 @@ export async function syncMinasulVendasFromPayload(
     const [dbLote] = await db
       .select()
       .from(lotesTable)
-      .where(eq(lotesTable.numero_lote_cooperativa, coopBatchId))
+      .where(sql`REPLACE(${lotesTable.numero_lote_cooperativa}, '/', '') = ${coopBatchId.replace(/\//g, '')}`)
       .limit(1);
 
     let currentFazendaId = dbLote?.fazenda_id || credencialFazendaId;
