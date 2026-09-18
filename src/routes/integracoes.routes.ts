@@ -327,7 +327,8 @@ integracoesRouter.get("/integracoes/:id/buscar-registros", async (c) => {
 
     const m = mes.padStart(2, "0");
     const dateIni = `${ano}-${m}-01`;
-    const dateEnd = new Date(Number(ano), Number(m), 0).toISOString().slice(0, 10);
+    const diasNoMes = new Date(Number(ano), Number(m), 0).getDate();
+    const dateEnd = `${ano}-${m}-${diasNoMes}`;
 
     // Retorna os dados para o frontend, SEM salvar ainda
     const vendasResumo = await minasulFetchVendas(token, dateIni, dateEnd);
@@ -337,6 +338,29 @@ integracoesRouter.get("/integracoes/:id/buscar-registros", async (c) => {
     });
   } catch (err: any) {
     return c.json({ error: "Erro ao buscar registros", message: err.message }, 500);
+  }
+});
+
+// ── GET /api/integracoes/:id/credenciais-puras ─────────────────────────────────
+integracoesRouter.get("/integracoes/:id/credenciais-puras", async (c) => {
+  const id = c.req.param("id");
+  try {
+    const [cred] = await db
+      .select()
+      .from(integracoesCredenciaisTable)
+      .where(eq(integracoesCredenciaisTable.id, id))
+      .limit(1);
+
+    if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
+
+    const password = decrypt(cred.password_encrypted);
+    
+    return c.json({
+      username: cred.username,
+      password: password
+    });
+  } catch (err: any) {
+    return c.json({ error: "Erro ao buscar credenciais", message: err.message }, 500);
   }
 });
 
