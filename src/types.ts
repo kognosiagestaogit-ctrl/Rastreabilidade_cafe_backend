@@ -84,6 +84,7 @@ export type Venda = {
   cooperado: string | null;
   data_envio_armazem: string | null;
   sacas_do_lote: number | null;
+  sobra_sacas: number | null;
   nr_remessa_cooperativa: string | null;
   lotes_agrupados: string | null;
   descontos: number | null;

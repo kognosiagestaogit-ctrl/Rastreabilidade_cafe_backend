@@ -34,6 +34,7 @@ const vendaSchema = z.object({
   cooperado: z.string().trim().max(50).optional().nullable(),
   data_envio_armazem: z.string().optional().nullable(),
   sacas_do_lote: z.number().optional().nullable(),
+  sobra_sacas: z.number().optional().nullable(),
   nr_remessa_cooperativa: z.string().trim().max(50).optional().nullable(),
   lotes_agrupados: z.string().trim().max(200).optional().nullable(),
   descontos: z.number().optional().nullable(),
