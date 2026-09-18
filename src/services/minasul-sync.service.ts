@@ -140,7 +140,7 @@ export async function syncMinasulVendasFromPayload(
       nr_remessa_cooperativa: resumo.FISCALDOCUMENTNUMBER || dbLote?.nf_remessa_cooperativa || null,
       data_envio_armazem: dbLote?.data_envio_cooperativa || null,
       sacas_do_lote: dbLote?.numero_sacas || null,
-      sobra_sacas: dbLote?.numero_sacas != null ? dbLote.numero_sacas - (parseNumber(resumo.QTYBAGS) || 0) : null,
+      sobras_sacas: dbLote?.numero_sacas != null ? dbLote.numero_sacas - (parseNumber(resumo.QTYBAGS) || 0) : null,
       cooperado: resumo.PROPERTYDESCR || null,
       status: "RECEBIDO", 
       observacoes: `[Criado pela API] Importado via Minasul. Tipo original: ${resumo.SALESTYPE || 'N/A'}. Lote Coop: ${coopBatchId}`,

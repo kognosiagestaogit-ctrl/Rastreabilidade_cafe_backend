@@ -35,7 +35,7 @@ const vendaSchema = z.object({
   cooperado: z.string().trim().max(50).optional().nullable(),
   data_envio_armazem: z.string().optional().nullable(),
   sacas_do_lote: z.number().optional().nullable(),
-  sobra_sacas: z.number().optional().nullable(),
+  sobras_sacas: z.number().optional().nullable(),
   nr_remessa_cooperativa: z.string().trim().max(50).optional().nullable(),
   lotes_agrupados: z.string().trim().max(200).optional().nullable(),
   descontos: z.number().optional().nullable(),
@@ -152,11 +152,11 @@ vendasRouter.post("/vendas", async (c) => {
 
         await db
           .update(vendasTable)
-          .set({ lote_id: loteEncontrado.id, sobra_sacas: sobra, sacas_do_lote: loteEncontrado.numero_sacas })
+          .set({ lote_id: loteEncontrado.id, sobras_sacas: sobra, sacas_do_lote: loteEncontrado.numero_sacas })
           .where(eq(vendasTable.id, created.id));
 
         created.lote_id = loteEncontrado.id;
-        created.sobra_sacas = sobra;
+        created.sobras_sacas = sobra;
         created.sacas_do_lote = loteEncontrado.numero_sacas;
       }
     } else if (created.lote_id) {
@@ -164,8 +164,8 @@ vendasRouter.post("/vendas", async (c) => {
       const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, created.lote_id)).limit(1);
       if (lote && lote.numero_sacas != null) {
         const sobra = lote.numero_sacas - created.sacas_vendidas;
-        await db.update(vendasTable).set({ sobra_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, created.id));
-        created.sobra_sacas = sobra;
+        await db.update(vendasTable).set({ sobras_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, created.id));
+        created.sobras_sacas = sobra;
         created.sacas_do_lote = lote.numero_sacas;
       }
     }
@@ -200,8 +200,8 @@ vendasRouter.put("/vendas/:id", async (c) => {
       const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, updated.lote_id)).limit(1);
       if (lote && lote.numero_sacas != null) {
          const sobra = lote.numero_sacas - updated.sacas_vendidas;
-         await db.update(vendasTable).set({ sobra_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, id));
-         updated.sobra_sacas = sobra;
+         await db.update(vendasTable).set({ sobras_sacas: sobra, sacas_do_lote: lote.numero_sacas }).where(eq(vendasTable.id, id));
+         updated.sobras_sacas = sobra;
          updated.sacas_do_lote = lote.numero_sacas;
       }
     }

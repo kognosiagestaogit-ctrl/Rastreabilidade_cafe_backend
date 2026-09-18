@@ -134,7 +134,7 @@ export const vendasTable = pgTable("vendas", {
   cooperado: text("cooperado"),
   data_envio_armazem: date("data_envio_armazem", { mode: "string" }),
   sacas_do_lote: real("sacas_do_lote"),
-  sobra_sacas: real("sobra_sacas"),
+  sobras_sacas: real("sobras_sacas"),
   nr_remessa_cooperativa: text("nr_remessa_cooperativa"),
   lotes_agrupados: text("lotes_agrupados"),
   descontos: real("descontos"),
