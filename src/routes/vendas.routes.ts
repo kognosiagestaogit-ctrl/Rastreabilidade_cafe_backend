@@ -133,6 +133,39 @@ vendasRouter.post("/vendas", async (c) => {
     };
     
     const [created] = await db.insert(vendasTable).values(nova).returning();
+
+    // Inteligência de Auto-Vínculo: Venda -> Lote
+    if (!created.lote_id && created.numero_lote_cooperativa) {
+      const [loteEncontrado] = await db
+        .select()
+        .from(lotesTable)
+        .where(eq(lotesTable.numero_lote_cooperativa, created.numero_lote_cooperativa))
+        .limit(1);
+
+      if (loteEncontrado) {
+        let sobra = null;
+        if (loteEncontrado.numero_sacas != null) {
+          sobra = loteEncontrado.numero_sacas - created.sacas_vendidas;
+        }
+
+        await db
+          .update(vendasTable)
+          .set({ lote_id: loteEncontrado.id, sobra_sacas: sobra })
+          .where(eq(vendasTable.id, created.id));
+
+        created.lote_id = loteEncontrado.id;
+        created.sobra_sacas = sobra;
+      }
+    } else if (created.lote_id) {
+      // Se já veio com lote_id, calcular a sobra
+      const [lote] = await db.select().from(lotesTable).where(eq(lotesTable.id, created.lote_id)).limit(1);
+      if (lote && lote.numero_sacas != null) {
+        const sobra = lote.numero_sacas - created.sacas_vendidas;
+        await db.update(vendasTable).set({ sobra_sacas: sobra }).where(eq(vendasTable.id, created.id));
+        created.sobra_sacas = sobra;
+      }
+    }
+
     return c.json(created, 201);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
