@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db/client";
 import { vendasTable, lotesTable } from "../db/schema";
+import { recalcularTotaisAmostra } from "../services/amostras.service";
 import { randomUUID } from "crypto";
 
 // Montado em /api pelo index.ts
@@ -169,6 +170,10 @@ vendasRouter.post("/vendas", async (c) => {
       }
     }
 
+    if (created.amostra_id) {
+      await recalcularTotaisAmostra(created.amostra_id);
+    }
+
     return c.json(created, 201);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
@@ -201,6 +206,10 @@ vendasRouter.put("/vendas/:id", async (c) => {
       }
     }
 
+    if (updated.amostra_id) {
+      await recalcularTotaisAmostra(updated.amostra_id);
+    }
+
     return c.json(updated);
   } catch (err: any) {
     if (err instanceof z.ZodError) return c.json({ error: "Erro de validação", details: err.errors }, 400);
@@ -214,6 +223,11 @@ vendasRouter.delete("/vendas/:id", async (c) => {
   try {
     const [deleted] = await db.delete(vendasTable).where(eq(vendasTable.id, id)).returning();
     if (!deleted) return c.json({ error: "Venda não encontrada" }, 404);
+
+    if (deleted.amostra_id) {
+      await recalcularTotaisAmostra(deleted.amostra_id);
+    }
+
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ error: "Erro ao remover venda", message: err.message }, 500);
