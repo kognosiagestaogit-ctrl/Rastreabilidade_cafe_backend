@@ -1,0 +1,15 @@
+#!/usr/bin/expect
+set timeout 10
+spawn bun run db:generate
+
+expect {
+    "Is data_entrada_terreiro_inicio column in lotes table created or renamed from another column?" {
+        send "\x1b\[B\r"
+        exp_continue
+    }
+    "Is data_entrada_terreiro_fim column in lotes table created or renamed from another column?" {
+        send "\r"
+        exp_continue
+    }
+    eof
+}
