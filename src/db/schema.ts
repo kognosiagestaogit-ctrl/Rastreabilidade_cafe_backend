@@ -153,6 +153,7 @@ export const integracoesCredenciaisTable = pgTable("integracoes_credenciais", {
     .notNull()
     .references(() => fazendasTable.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(), // 'minasul' | futuramente outros
+  nome: text("nome"), // Nome amigável da conta (ex: João, Maria)
   username: text("username").notNull(), // login/matrícula do cooperado
   password_encrypted: text("password_encrypted").notNull(), // AES-256-GCM
   access_token: text("access_token"), // JWT obtido no login (cache)

@@ -31,6 +31,7 @@ type IntegracaoCredencial = {
 
 const integracaoSchema = z.object({
   provider: z.enum(["minasul"]),
+  nome: z.string().optional(),
   username: z.string().trim().min(1, "Login é obrigatório"),
   password: z.string().min(1, "Senha é obrigatória"),
 });
@@ -85,6 +86,7 @@ integracoesRouter.post("/fazendas/:fazendaId/integracoes", async (c) => {
       id: randomUUID(),
       fazenda_id: fazendaId,
       provider: data.provider,
+      nome: data.nome ?? null,
       username: data.username,
       password_encrypted: passwordEncrypted,
       access_token: null,
@@ -118,6 +120,7 @@ integracoesRouter.put("/integracoes/:id", async (c) => {
 
     const updates: Record<string, any> = { updated_at: now };
     if (data.username) updates.username = data.username;
+    if (data.nome !== undefined) updates.nome = data.nome;
     if (data.password) updates.password_encrypted = encrypt(data.password);
     if (data.provider) updates.provider = data.provider;
 
