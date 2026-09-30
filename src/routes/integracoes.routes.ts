@@ -386,6 +386,21 @@ integracoesRouter.post("/integracoes/:id/salvar-registros", async (c) => {
 
     if (!cred) return c.json({ error: "Integração não encontrada" }, 404);
 
+    // Debug: verificar se DETAILS_EXTRA chega do frontend
+    if (vendasResumo.length > 0) {
+      const sample = vendasResumo[0];
+      console.log("[salvar-registros] Amostra do payload:", {
+        COOPBATCHFORSALESID: sample.COOPBATCHFORSALESID,
+        FISCALDOCUMENTNUMBER: sample.FISCALDOCUMENTNUMBER,
+        HAS_DETAILS_EXTRA: !!sample.DETAILS_EXTRA,
+        DETAILS_EXTRA_KEYS: sample.DETAILS_EXTRA ? Object.keys(sample.DETAILS_EXTRA) : null,
+        DuplicateFinancing: sample.DETAILS_EXTRA?.DuplicateFinancing,
+        AdditionAmount: sample.DETAILS_EXTRA?.AdditionAmount,
+        SecondDiscountAmount: sample.DETAILS_EXTRA?.SecondDiscountAmount,
+        Discount: sample.DETAILS_EXTRA?.Discount,
+      });
+    }
+
     const { amostras_novas, vendas_novas } = await syncMinasulVendasFromPayload(
       cred.fazenda_id,
       vendasResumo

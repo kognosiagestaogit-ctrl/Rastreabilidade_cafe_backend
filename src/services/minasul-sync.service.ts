@@ -17,6 +17,21 @@ const parseNumber = (val: any) => {
 };
 
 /**
+ * Parser para números em formato americano (ex: "1,000.50", "214.36", "0.00")
+ * usado nos campos retornados pela chamada detalhada da Minasul (SalesStatement.response).
+ */
+const parseNumberUS = (val: any): number | null => {
+  if (val === null || val === undefined || val === "") return null;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const cleanStr = val.replace(/,/g, "");
+    const parsed = parseFloat(cleanStr);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+};
+
+/**
  * Cria ou atualiza os registros de vendas e amostras no banco de dados
  * com base no payload já baixado da Minasul.
  */
@@ -139,9 +154,9 @@ export async function syncMinasulVendasFromPayload(
       premio_rainforest: parseNumber(resumo.AWARDVALUE) || 0,
       nr_remessa_cooperativa: resumo.FISCALDOCUMENTNUMBER || dbLote?.nf_remessa_cooperativa || null,
       nf_venda: resumo.FISCALDOCUMENTNUMBER || null,
-      duplicata_financeiro: parseNumber(resumo.DETAILS_EXTRA?.DuplicateFinancing) || null,
-      adiantamento: parseNumber(resumo.DETAILS_EXTRA?.AdditionAmount) || null,
-      descontos: parseNumber(resumo.DETAILS_EXTRA?.SecondDiscountAmount) || null,
+      duplicata_financeiro: resumo.DETAILS_EXTRA ? parseNumberUS(resumo.DETAILS_EXTRA.DuplicateFinancing) : null,
+      adiantamento: resumo.DETAILS_EXTRA ? parseNumberUS(resumo.DETAILS_EXTRA.AdditionAmount) : null,
+      descontos: resumo.DETAILS_EXTRA ? parseNumberUS(resumo.DETAILS_EXTRA.SecondDiscountAmount) : null,
       data_envio_armazem: dbLote?.data_envio_cooperativa || null,
       sacas_do_lote: dbLote?.numero_sacas || null,
       sobras_sacas: dbLote?.numero_sacas != null ? dbLote.numero_sacas - (parseNumber(resumo.QTYBAGS) || 0) : null,
