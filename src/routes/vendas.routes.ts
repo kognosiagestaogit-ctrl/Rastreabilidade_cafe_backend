@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, isNull, getTableColumns } from "drizzle-orm";
 import { db } from "../db/client";
 import { vendasTable, lotesTable } from "../db/schema";
 import { recalcularTotaisAmostra } from "../services/amostras.service";
@@ -70,8 +70,12 @@ vendasRouter.get("/fazendas/:fazendaId/vendas", async (c) => {
   const fazendaId = c.req.param("fazendaId");
   try {
     const rows = await db
-      .select()
+      .select({
+        ...getTableColumns(vendasTable),
+        data_colheita: lotesTable.data_colheita_inicio,
+      })
       .from(vendasTable)
+      .leftJoin(lotesTable, eq(vendasTable.lote_id, lotesTable.id))
       .where(eq(vendasTable.fazenda_id, fazendaId))
       .orderBy(desc(vendasTable.created_at));
     return c.json(rows);
