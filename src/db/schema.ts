@@ -138,6 +138,8 @@ export const vendasTable = pgTable("vendas", {
   nr_remessa_cooperativa: text("nr_remessa_cooperativa"),
   lotes_agrupados: text("lotes_agrupados"),
   descontos: real("descontos"),
+  duplicata_financeiro: real("duplicata_financeiro"),
+  adiantamento: real("adiantamento"),
   conta_corrente: text("conta_corrente"),
   is_ds: integer("is_ds"),
   data_recebimento_premio: date("data_recebimento_premio", { mode: "string" }),

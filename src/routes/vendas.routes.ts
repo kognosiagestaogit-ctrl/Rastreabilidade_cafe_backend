@@ -39,6 +39,8 @@ const vendaSchema = z.object({
   nr_remessa_cooperativa: z.string().trim().max(50).optional().nullable(),
   lotes_agrupados: z.string().trim().max(200).optional().nullable(),
   descontos: z.number().optional().nullable(),
+  duplicata_financeiro: z.number().optional().nullable(),
+  adiantamento: z.number().optional().nullable(),
   conta_corrente: z.string().trim().max(200).optional().nullable(),
   is_ds: z.number().int().optional().nullable(),
   data_recebimento_premio: z.string().optional().nullable(),
